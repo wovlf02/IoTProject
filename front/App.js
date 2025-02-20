@@ -5,9 +5,9 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { Image } from 'react-native';
 import HomeScreen from './src/screens/home/HomeScreen';
 import CommunityScreen from './src/screens/community/CommunityMainScreen';
-import PersonalLearningScreen from './src/screens/personal/PersonalStudyMainScreen';
-import GroupLearningScreen from './src/screens/group/GroupStudyMainScreen';
-import MyPageScreen from './src/screens/mypage/MyPageMainScreen';
+import PersonalStudyMainScreen from './src/screens/personal/PersonalStudyMainScreen';
+import GroupStudyMainScreen from './src/screens/group/GroupStudyMainScreen';
+import MyPageMainScreen from './src/screens/mypage/MyPageMainScreen';
 import IntroScreen from './src/screens/IntroScreen';
 import LoginScreen from './src/screens/auth/LoginScreen';
 import RegisterScreen from './src/screens/auth/RegisterScreen';
@@ -44,13 +44,17 @@ const screenOptions = ({ route }) => ({
     tabBarInactiveTintColor: '#8E8E93',
 });
 
-const MainTabNavigator = () => (
+const MainTabNavigator = ({ route }) => (
     <Tab.Navigator screenOptions={screenOptions}>
-        <Tab.Screen name="Home" component={HomeScreen} />
+        <Tab.Screen
+            name="Home"
+            component={HomeScreen}
+            initialParams={route.params} // 🔹 로그인 후 전달받은 데이터를 HomeScreen으로 전달
+        />
         <Tab.Screen name="Community" component={CommunityScreen} />
-        <Tab.Screen name="Personal Learning" component={PersonalLearningScreen} />
-        <Tab.Screen name="Group Learning" component={GroupLearningScreen} />
-        <Tab.Screen name="My Page" component={MyPageScreen} />
+        <Tab.Screen name="Personal Learning" component={PersonalStudyMainScreen} />
+        <Tab.Screen name="Group Learning" component={GroupStudyMainScreen} />
+        <Tab.Screen name="My Page" component={MyPageMainScreen} />
     </Tab.Navigator>
 );
 
@@ -62,7 +66,11 @@ const App = () => (
             <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="FindAccount" component={FindAccountScreen} />
             <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
-            <Stack.Screen name="Home" component={MainTabNavigator} />
+            <Stack.Screen
+                name="Main"  // 🔹 기존의 "Home"을 "MainTabs"로 변경하여 네비게이션 충돌 방지
+                component={MainTabNavigator}
+                options={{ headerShown: false }}
+            />
         </Stack.Navigator>
     </NavigationContainer>
 );

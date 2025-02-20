@@ -20,7 +20,12 @@ const LoginScreen = ({ navigation }) => {
                 await EncryptedStorage.setItem('refreshToken', refreshToken);
 
                 // 🔄 홈 화면으로 이동하며 사용자 데이터 전달
-                navigation.navigate('Home', { username, email, name, accessToken });
+                navigation.navigate('Main', {
+                    username: username,
+                    email: email,
+                    name: name,
+                    accessToken: accessToken,
+                });
             }
         } catch (error) {
             console.error(error);

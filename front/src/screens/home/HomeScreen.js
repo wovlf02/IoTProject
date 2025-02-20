@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 
 const HomeScreen = ({ route }) => {
     // 🔹 로그인 후 전달받은 사용자 정보
-    const { username, email, name } = route.params;
+    const { username, email, name } = route.params || {};
 
     return (
         <View style={styles.container}>
