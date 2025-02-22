@@ -3,37 +3,37 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Image } from 'react-native';
-import HomeScreen from './src/screens/home/HomeScreen';
-import CommunityScreen from './src/screens/community/CommunityMainScreen';
-import PersonalStudyMainScreen from './src/screens/personal/PersonalStudyMainScreen';
-import GroupStudyMainScreen from './src/screens/group/GroupStudyMainScreen';
+
+// 스크린 파일들 가져오기
+import MapMainScreen from './src/screens/map/MapMainScreen';
+import CommunityMainScreen from './src/screens/community/CommunityMainScreen';
 import MyPageMainScreen from './src/screens/mypage/MyPageMainScreen';
+import SearchMainScreen from './src/screens/search/SearchMainScreen';
 import IntroScreen from './src/screens/IntroScreen';
 import LoginScreen from './src/screens/auth/LoginScreen';
 import RegisterScreen from './src/screens/auth/RegisterScreen';
 import FindAccountScreen from "./src/screens/auth/FindAccountScreen";
 import ResetPasswordScreen from "./src/screens/auth/ResetPasswordScreen";
 
+// 네비게이터 생성
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
+// 하단 탭 네비게이션 아이콘 설정
 const screenOptions = ({ route }) => ({
     tabBarIcon: ({ focused, size }) => {
         let iconPath;
         switch (route.name) {
-            case 'Home':
-                iconPath = require('./src/assets/home.png');
+            case '길찾기':
+                iconPath = require('./src/assets/map.png');
                 break;
-            case 'Community':
+            case '건물 검색':
+                iconPath = require('./src/assets/search.png');
+                break;
+            case '커뮤니티':
                 iconPath = require('./src/assets/community.png');
                 break;
-            case 'Personal Learning':
-                iconPath = require('./src/assets/personal.png');
-                break;
-            case 'Group Learning':
-                iconPath = require('./src/assets/group.png');
-                break;
-            case 'My Page':
+            case '마이페이지':
                 iconPath = require('./src/assets/mypage.png');
                 break;
         }
@@ -44,20 +44,21 @@ const screenOptions = ({ route }) => ({
     tabBarInactiveTintColor: '#8E8E93',
 });
 
+// 탭 네비게이션 구성
 const MainTabNavigator = ({ route }) => (
     <Tab.Navigator screenOptions={screenOptions}>
         <Tab.Screen
-            name="Home"
-            component={HomeScreen}
-            initialParams={route.params} // 🔹 로그인 후 전달받은 데이터를 HomeScreen으로 전달
+            name="길찾기"
+            component={MapMainScreen}
+            initialParams={route.params} // 로그인 후 전달받은 데이터
         />
-        <Tab.Screen name="Community" component={CommunityScreen} />
-        <Tab.Screen name="Personal Learning" component={PersonalStudyMainScreen} />
-        <Tab.Screen name="Group Learning" component={GroupStudyMainScreen} />
-        <Tab.Screen name="My Page" component={MyPageMainScreen} />
+        <Tab.Screen name="건물 검색" component={SearchMainScreen} />
+        <Tab.Screen name="커뮤니티" component={CommunityMainScreen} />
+        <Tab.Screen name="마이페이지" component={MyPageMainScreen} />
     </Tab.Navigator>
 );
 
+// 앱 네비게이션 설정
 const App = () => (
     <NavigationContainer>
         <Stack.Navigator initialRouteName="Intro" screenOptions={{ headerShown: false }}>
@@ -67,7 +68,7 @@ const App = () => (
             <Stack.Screen name="FindAccount" component={FindAccountScreen} />
             <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
             <Stack.Screen
-                name="Main"  // 🔹 기존의 "Home"을 "MainTabs"로 변경하여 네비게이션 충돌 방지
+                name="Main"
                 component={MainTabNavigator}
                 options={{ headerShown: false }}
             />
