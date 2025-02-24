@@ -167,13 +167,10 @@ const styles = StyleSheet.create({
         backgroundColor: '#007BFF',
         width: 60,
         height: 60,
-        borderRadius: 30,
+        borderRadius: 30, // 원형 유지
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOpacity: 0.2,
-        shadowRadius: 5,
-        elevation: 5,
+        elevation: 5, // 그림자 효과
     },
     addIcon: {
         width: 30,

@@ -2,40 +2,32 @@ package com.studymate.back.controller;
 
 import com.studymate.back.dto.LocationRequest;
 import com.studymate.back.dto.LocationResponse;
-import com.studymate.back.service.LocationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
-/**
- * 위치 데이터를 관리하는 컨트롤러
- */
 @RestController
 @RequestMapping("/api/location")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*") // CORS 허용
 public class LocationController {
-    private final LocationService locationService;
 
     /**
-     * 사용자의 위치 데이터를 저장하는 API
-     * @param userId 사용자 고유 ID
-     * @param request 사용자 위치 요청 DTO
-     * @return 데이터베이스에 위치 데이터 저장
+     * 현재 위치 저장 API
+     * @param request LocationRequest (요청 DTO)
+     * @return LocationResponse (응답 DTO)
      */
-    @PostMapping("/{userId}")
-    public ResponseEntity<LocationResponse> saveLocation(@PathVariable Long userId, @RequestBody LocationRequest request) {
-        return ResponseEntity.ok(locationService.saveLocation(userId, request));
-    }
+    @PostMapping("/current")
+    public ResponseEntity<LocationResponse> saveCurrentLocation(@RequestBody LocationRequest request) {
+        try {
+            // 요청된 위도/경도를 기반으로 응답 생성
+            LocationResponse response = new LocationResponse(request.getLatitude(), request.getLongitude());
 
-    /**
-     * 특정 사용자의 최근 위치 목록을 조회하는 API
-     * @param userId 사용자 고유 ID
-     * @return 최근 위치 목록
-     */
-    @GetMapping("/{userId}")
-    public ResponseEntity<List<LocationResponse>> getUserLocations(@PathVariable Long userId) {
-        return ResponseEntity.ok(locationService.getUserLocations(userId));
+            System.out.println("📌 [백엔드] 요청 받음 -> 위도: " + request.getLatitude() + ", 경도: " + request.getLongitude());
+
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new LocationResponse(null, null));
+        }
     }
 }
