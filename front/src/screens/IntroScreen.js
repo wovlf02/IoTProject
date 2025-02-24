@@ -6,28 +6,29 @@ const IntroScreen = ({ navigation }) => {
         <View style={styles.container}>
             {/* 로고 및 앱 이름 */}
             <View style={styles.logoContainer}>
-                <Image source={require('../assets/intro.png')} style={styles.logo} />
-                <Text style={styles.appName}>StudyMate</Text>
+                <Image source={require('../assets/mianlogo.png')} style={styles.logo} />
+                <Text style={styles.appName}>SmartCampus</Text>
             </View>
 
             {/* 간략한 설명 */}
-            <Text style={styles.mainDescription}>학습 관리의 모든 것</Text>
+            <Text style={styles.mainDescription}>IOT프로젝트 메인화면</Text>
 
             {/* 주요 기능 아이콘 */}
             <View style={styles.iconSection}>
                 <View style={styles.iconCard}>
-                    <Image source={require('../assets/community.png')} style={styles.icon} />
-                    <Text style={styles.iconLabel}>커뮤니티</Text>
+                    <Image source={require('../assets/locat.png')} style={styles.icon} />
+                    <Text style={styles.iconLabel}>길안내</Text>
                 </View>
                 <View style={styles.iconCard}>
                     <Image source={require('../assets/personal.png')} style={styles.icon} />
-                    <Text style={styles.iconLabel}>개인 학습 관리</Text>
+                    <Text style={styles.iconLabel}>시간표</Text>
                 </View>
                 <View style={styles.iconCard}>
                     <Image source={require('../assets/group.png')} style={styles.icon} />
-                    <Text style={styles.iconLabel}>그룹 학습 관리</Text>
+                    <Text style={styles.iconLabel}>챗봇</Text>
                 </View>
             </View>
+
 
             {/* 버튼 섹션 */}
             <View style={styles.buttonContainer}>
@@ -43,6 +44,14 @@ const IntroScreen = ({ navigation }) => {
                 >
                     <Text style={styles.buttonText}>회원가입</Text>
                 </TouchableOpacity>
+                {/*테스트용*/}
+                <TouchableOpacity
+                    style={styles.testButton}
+                    onPress={() => navigation.navigate('Location')}
+                >
+                    <Text style={styles.buttonText}>테스트</Text>
+                </TouchableOpacity>
+                {/*테스트용*/}
             </View>
         </View>
     );
@@ -51,7 +60,7 @@ const IntroScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#E3F2FD',
+        backgroundColor: '#fffacd',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -66,13 +75,13 @@ const styles = StyleSheet.create({
     appName: {
         fontSize: 32,
         fontWeight: 'bold',
-        color: '#007BFF',
+        color: '#cd5c5c',
         marginTop: 10,
     },
     mainDescription: {
         fontSize: 22,
         fontWeight: 'bold',
-        color: '#007BFF',
+        color: '#D51',
         textAlign: 'center',
         marginBottom: 30,
     },
@@ -107,7 +116,7 @@ const styles = StyleSheet.create({
         marginTop: 30,
     },
     loginButton: {
-        backgroundColor: '#007BFF',
+        backgroundColor: '#66cdaa',
         paddingVertical: 15,
         flex: 1,
         borderRadius: 25,
@@ -119,6 +128,16 @@ const styles = StyleSheet.create({
         flex: 1,
         borderRadius: 25,
     },
+
+    testButton: {
+        backgroundColor: '#007BFF',
+        paddingVertical: 15,
+        flex: 1,
+        borderRadius: 25,
+        marginLeft: 10
+    },
+
+
     buttonText: {
         color: '#FFF',
         fontSize: 16,

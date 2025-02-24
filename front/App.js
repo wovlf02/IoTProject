@@ -13,6 +13,8 @@ import LoginScreen from './src/screens/auth/LoginScreen';
 import RegisterScreen from './src/screens/auth/RegisterScreen';
 import FindAccountScreen from "./src/screens/auth/FindAccountScreen";
 import ResetPasswordScreen from "./src/screens/auth/ResetPasswordScreen";
+import LocationScreen from "./src/screens/location/LocationScreen";
+import KakaoNavigationScreen from "./src/screens/location/KakaoNavigationScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -58,6 +60,21 @@ const MainTabNavigator = ({ route }) => (
     </Tab.Navigator>
 );
 
+const LocTabNavigator = ({ route }) => (
+    <Tab.Navigator screenOptions={screenOptions}>
+        <Tab.Screen
+            name="Home"
+            component={LocationScreen}
+        />
+        <Tab.Screen name="Community" component={CommunityScreen} />
+        <Tab.Screen name="Personal Learning" component={PersonalStudyMainScreen} />
+        <Tab.Screen name="Group Learning" component={GroupStudyMainScreen} />
+        <Tab.Screen name="My Page" component={MyPageMainScreen} />
+    </Tab.Navigator>
+);
+
+
+
 const App = () => (
     <NavigationContainer>
         <Stack.Navigator initialRouteName="Intro" screenOptions={{ headerShown: false }}>
@@ -66,11 +83,20 @@ const App = () => (
             <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="FindAccount" component={FindAccountScreen} />
             <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+            <Stack.Screen name="Location" component={LocationScreen} />
+            <Stack.Screen name="KakaoNavi" component={KakaoNavigationScreen} />
             <Stack.Screen
                 name="Main"  // 🔹 기존의 "Home"을 "MainTabs"로 변경하여 네비게이션 충돌 방지
                 component={MainTabNavigator}
                 options={{ headerShown: false }}
             />
+            <Stack.Screen
+                name="LocNav"  //
+                component={LocTabNavigator}
+                options={{ headerShown: false }}
+            />
+
+
         </Stack.Navigator>
     </NavigationContainer>
 );
