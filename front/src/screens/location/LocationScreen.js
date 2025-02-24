@@ -72,7 +72,7 @@ const LocationScreen = () => {
     <head>
       <meta charset="utf-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=e84461afa8078822e18c5b6af6752df6"></script>
+      <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey="></script>
       <style> * { margin: 0; padding: 0; } #map { width: 100%; height: 100vh; } </style>
     </head>
     <body>
