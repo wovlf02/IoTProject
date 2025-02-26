@@ -3,11 +3,11 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
-import { Image, TouchableOpacity, View, Text } from 'react-native';
+import { Image, TouchableOpacity } from 'react-native';
 
 // 스크린 파일들 가져오기
 import MapMainScreen from './src/screens/map/MapMainScreen';
-import CommunityMainScreen from './src/screens/community/CommunityMainScreen';
+import BoardScreen from './src/screens/community/BoardScreen';
 import MyPageMainScreen from './src/screens/mypage/MyPageMainScreen';
 import SearchMainScreen from './src/screens/search/SearchMainScreen';
 import IntroScreen from './src/screens/IntroScreen';
@@ -47,7 +47,7 @@ const screenOptions = ({ route }) => ({
                 style={{
                     width: size,
                     height: size,
-                    tintColor: focused ? '#007AFF' : '#C0C0C0', // 활성화: 원래 색상, 비활성화: 회색
+                    tintColor: focused ? '#007AFF' : '#C0C0C0', // 활성화 시 원래 색상, 비활성화 시 회색
                 }}
             />
         );
@@ -60,19 +60,18 @@ const screenOptions = ({ route }) => ({
 // 📌 하단 탭 네비게이션 구성
 const MainTabNavigator = ({ navigation }) => (
     <Tab.Navigator screenOptions={screenOptions}>
-        <Tab.Screen
-            name="길찾기"
-            component={MapMainScreen}
-            options={{
-                headerRight: () => (
-                    <TouchableOpacity onPress={() => navigation.openDrawer()} style={{ padding: 10 }}>
-                        <Image source={require('./src/assets/menu.png')} style={{ width: 24, height: 24 }} />
-                    </TouchableOpacity>
-                ),
-            }}
-        />
+        <Tab.Screen name="길찾기" component={MapMainScreen}/>
         <Tab.Screen name="건물 검색" component={SearchMainScreen} />
-        <Tab.Screen name="커뮤니티" component={CommunityMainScreen} />
+        <Tab.Screen name="커뮤니티" component={BoardScreen}
+                    options={{
+                        headerRight: () => (
+                            <TouchableOpacity onPress={() => navigation.openDrawer()} style={{padding: 10}}>
+                                <Image source={require('./src/assets/menu.png')} style={{width: 24, height: 24}} />
+                            </TouchableOpacity>
+                        )
+                    }}
+                    headerShown={false}
+        />
         <Tab.Screen name="마이페이지" component={MyPageMainScreen} />
     </Tab.Navigator>
 );
@@ -80,11 +79,9 @@ const MainTabNavigator = ({ navigation }) => (
 // 📌 드로어 네비게이션 (햄버거 메뉴)
 const DrawerNavigator = () => (
     <Drawer.Navigator
-        initialRouteName="Main"
         screenOptions={{ drawerPosition: 'right', headerShown: false }}
     >
-        <Drawer.Screen name="Main" component={MainTabNavigator} />
-        <Drawer.Screen name="게시판" component={CommunityMainScreen} />
+        <Drawer.Screen name="게시판" component={BoardScreen} />
         <Drawer.Screen name="채팅" component={ChatScreen} />
         <Drawer.Screen name="친구관리" component={FriendsScreen} />
     </Drawer.Navigator>
@@ -99,7 +96,7 @@ const App = () => (
             <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="FindAccount" component={FindAccountScreen} />
             <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
-            <Stack.Screen name="Main" component={DrawerNavigator} />
+            <Stack.Screen name="Main" component={MainTabNavigator} />
         </Stack.Navigator>
     </NavigationContainer>
 );

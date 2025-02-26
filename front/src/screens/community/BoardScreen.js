@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
-const CommunityMainScreen = () => {
+const BoardScreen = () => {
     const navigation = useNavigation();
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -63,6 +63,14 @@ const CommunityMainScreen = () => {
 
     return (
         <View style={styles.container}>
+            {/* 📌 상단 헤더 (커뮤니티 제거, 게시판만 유지) */}
+            <View style={styles.headerContainer}>
+                <Text style={styles.headerTitle}>게시판</Text>
+                <TouchableOpacity onPress={() => navigation.openDrawer()}>
+                    <Image source={require('../../assets/menu.png')} style={styles.menuIcon} />
+                </TouchableOpacity>
+            </View>
+
             {/* 🔍 검색 바 */}
             <View style={styles.searchBar}>
                 <Image source={require('../../assets/board_search.png')} style={styles.searchIcon} />
@@ -91,13 +99,38 @@ const CommunityMainScreen = () => {
     );
 };
 
-export default CommunityMainScreen;
+export default BoardScreen;
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F8F9FA',
     },
+    /* 📌 헤더 스타일 */
+    headerContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 15,
+        paddingVertical: 15,
+        backgroundColor: '#FFF',
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowRadius: 5,
+    },
+    headerTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        flex: 1,
+    },
+    menuIcon: {
+        width: 28,
+        height: 28,
+        resizeMode: 'contain',
+    },
+    /* 🔍 검색 바 */
     searchBar: {
         flexDirection: 'row',
         backgroundColor: '#FFF',
@@ -120,6 +153,7 @@ const styles = StyleSheet.create({
         flex: 1,
         marginLeft: 8,
     },
+    /* 📜 게시글 목록 */
     postList: {
         paddingBottom: 80,
     },
@@ -160,6 +194,7 @@ const styles = StyleSheet.create({
         marginRight: 5,
         borderRadius: 5,
     },
+    /* 📝 게시글 작성 버튼 */
     floatingButton: {
         position: 'absolute',
         right: 20,
@@ -167,10 +202,10 @@ const styles = StyleSheet.create({
         backgroundColor: '#007BFF',
         width: 60,
         height: 60,
-        borderRadius: 30, // 원형 유지
+        borderRadius: 30,
         alignItems: 'center',
         justifyContent: 'center',
-        elevation: 5, // 그림자 효과
+        elevation: 5,
     },
     addIcon: {
         width: 30,
