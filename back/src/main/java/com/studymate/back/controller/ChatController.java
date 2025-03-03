@@ -1,9 +1,6 @@
 package com.studymate.back.controller;
 
-import com.studymate.back.dto.ChatMessageRequest;
-import com.studymate.back.dto.ChatMessageResponse;
-import com.studymate.back.dto.ChatRoomRequest;
-import com.studymate.back.dto.ChatRoomResponse;
+import com.studymate.back.dto.*;
 import com.studymate.back.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

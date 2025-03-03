@@ -2,6 +2,7 @@ package com.studymate.back.controller;
 
 import com.studymate.back.dto.BoardRequest;
 import com.studymate.back.dto.BoardResponse;
+import com.studymate.back.dto.ReportRequest;
 import com.studymate.back.service.BoardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
