@@ -1,7 +1,6 @@
 package com.studymate.back.controller;
 
-import com.studymate.back.dto.FriendRequest;
-import com.studymate.back.dto.FriendResponse;
+import com.studymate.back.dto.*;
 import com.studymate.back.service.FriendService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
