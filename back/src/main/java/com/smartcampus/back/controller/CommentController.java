@@ -1,8 +1,8 @@
 package com.smartcampus.back.controller;
 
-import com.smartcampus.back.dto.CommentRequest;
-import com.smartcampus.back.dto.CommentResponse;
-import com.smartcampus.back.service.CommentService;
+import com.studymate.back.dto.CommentRequest;
+import com.studymate.back.dto.CommentResponse;
+import com.studymate.back.service.CommentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

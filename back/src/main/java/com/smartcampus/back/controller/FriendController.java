@@ -1,10 +1,8 @@
 package com.smartcampus.back.controller;
 
-import com.smartcampus.back.dto.FriendRequest;
-import com.smartcampus.back.dto.FriendResponse;
-import com.smartcampus.back.dto.ReportRequest;
-import com.studymate.back.dto.*;
-import com.smartcampus.back.service.FriendService;
+import com.studymate.back.dto.FriendRequest;
+import com.studymate.back.dto.FriendResponse;
+import com.studymate.back.service.FriendService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

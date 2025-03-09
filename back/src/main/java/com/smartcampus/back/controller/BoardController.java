@@ -1,9 +1,9 @@
 package com.smartcampus.back.controller;
 
-import com.smartcampus.back.dto.BoardRequest;
-import com.smartcampus.back.dto.BoardResponse;
-import com.smartcampus.back.dto.ReportRequest;
-import com.smartcampus.back.service.BoardService;
+import com.studymate.back.dto.BoardRequest;
+import com.studymate.back.dto.BoardResponse;
+import com.studymate.back.dto.ReportRequest;
+import com.studymate.back.service.BoardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

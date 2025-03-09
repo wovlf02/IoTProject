@@ -1,6 +1,6 @@
 package com.smartcampus.back.security;
 
-import com.smartcampus.back.config.JwtProvider;
+import com.studymate.back.config.JwtProvider;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;

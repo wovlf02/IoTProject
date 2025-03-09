@@ -1,8 +1,7 @@
 package com.smartcampus.back.controller;
 
-import com.smartcampus.back.dto.*;
 import com.studymate.back.dto.*;
-import com.smartcampus.back.service.ChatService;
+import com.studymate.back.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

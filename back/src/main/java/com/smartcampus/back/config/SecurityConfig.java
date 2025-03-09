@@ -1,6 +1,6 @@
 package com.smartcampus.back.config;
 
-import com.smartcampus.back.security.JwtAuthenticationFilter;
+import com.studymate.back.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

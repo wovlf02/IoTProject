@@ -1,10 +1,10 @@
 package com.smartcampus.back.service;
 
-import com.smartcampus.back.config.JwtProvider;
-import com.smartcampus.back.dto.*;
+import com.studymate.back.config.JwtProvider;
 import com.studymate.back.dto.*;
-import com.smartcampus.back.repository.UserRepository;
-import com.smartcampus.back.utils.EmailUtil;
+import com.studymate.back.entity.User;
+import com.studymate.back.repository.UserRepository;
+import com.studymate.back.utils.EmailUtil;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.redis.core.RedisTemplate;
