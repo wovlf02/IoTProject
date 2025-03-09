@@ -5,12 +5,12 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 /**
- * User Entity 클래스
- * users 테이블과 매핑되는 JPA Entity
+ * User 엔티티 클래스
+ * users 테이블과 매핑됨
+ * 사용자 계정 정보 관리 (회원가입, 로그인, 프로필 관리)
  */
 @Entity
 @Table(name = "users")
@@ -22,99 +22,91 @@ import java.time.LocalDateTime;
 public class User {
 
     /**
-     * 사용자 고유 ID
-     * Auto Increment
-     * Primary Key
+     * 사용자 고유 ID (Primary Key)
+     * 자동 증가 (IDENTITY 전략)
+     * 각 사용자는 고유한 ID를 가짐
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     /**
-     * 아이디
-     * Not Null
-     * 중복 불가
-     * 최대 50자
+     * 아이디 (username)
+     * 로그인 시 사용되는 고유 식별자
+     * 중복 불가 (unique)
+     * 최대 50자 제한
      */
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(name = "username", nullable = false, unique = true, length = 50)
     private String username;
 
     /**
-     * 암호화된 비밀번호
-     * Not Null
+     * 비밀번호 (password)
+     * BCrypt 해시로 암호화된 상태로 저장됨
+     * 보안 강화 위해 원문 저장 금지
      */
-    @Column(nullable = false)
+    @Column(name = "password", nullable = false)
     private String password;
 
     /**
-     * 이름
-     * Not Null
-     * 최대 100자
+     * 닉네임 (nickname)
+     * 사용자별로 고유한 별명
+     * 중복 불가 (unique)
+     * 최대 100자 제한
      */
-    @Column(nullable = false, length = 100)
-    private String name;
+    @Column(name = "nickname", nullable = false, unique = true, length = 100)
+    private String nickname;
 
     /**
-     * 전화번호
-     * Not Null
-     * 최대 15자
+     * 이메일 (email)
+     * 로그인 및 인증용 이메일 주소
+     * 중복 불가 (unique)
+     * 최대 100자 제한
      */
-    @Column(nullable = false, length = 15)
-    private String phone;
-
-    /**
-     * 이메일
-     * Not Null
-     * 중복 불가
-     * 최대 100자
-     */
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(name = "email", nullable = false, unique = true, length = 100)
     private String email;
 
     /**
-     * 이메일 인증 여부
-     * Default: false
-     * Not Null
+     * 사용자 역할 (role)
+     * Default: 'user'
+     * 관리자(admin) 또는 일반 사용자(user)로 구분됨
      */
-    @Column(nullable = false, name = "email_verified")
+    @Column(name = "role", nullable = false, length = 10)
     @Builder.Default
-    private boolean emailVerified = false;
+    private String role = "user";
 
     /**
-     * Refresh Token -> JWT 재발급용
-     * BCrypt 암호화된 상태로 저장 -> 보안 강화
+     * Refresh Token (JWT 재발급용)
+     * 로그인 유지 및 보안 강화를 위한 JWT 토큰 저장
+     * Default: null (필요 시 발급됨)
      */
-    @Column(name = "refresh_token")
+    @Column(name = "refresh_token", length = 500)
     private String refreshToken;
 
     /**
-     * 계정 생성 시각
-     * 회원가입이 완료된 시각으로 자동 설정
+     * 프로필 이미지 (profile_image)
+     * BLOB 데이터로 저장됨 (이미지 파일)
+     * Default: null (선택 사항)
      */
-    @Column(nullable = false, updatable = false)
+    @Lob
+    @Column(name = "profile_image")
+    private byte[] profileImage;
+
+    /**
+     * 계정 생성 시각 (created_at)
+     * Default: 현재 시각
+     * 회원가입 시 자동 설정됨
+     * 수정 불가 (updateable = false)
+     */
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     /**
-     * 계정 정보 마지막 수정 시각
-     * -> 계정 정보 변경 시 자동 갱신
+     * 계정 정보 마지막 수정 시각 (updated_at)
+     * 계정 정보 변경 시 자동 갱신됨
      */
-    @Column(nullable = false)
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
-
-    /**
-     * Entity 저장 전 실행 -> createdAt 자동 설정
-     */
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    /**
-     * Entity 업데이트 전 실행 -> updatedAt 자동 설정
-     */
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
 }

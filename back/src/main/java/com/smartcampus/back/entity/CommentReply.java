@@ -1,4 +1,4 @@
 package com.smartcampus.back.entity;
 
-public class Comment {
+public class CommentReply {
 }
