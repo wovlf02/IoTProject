@@ -1,20 +1,20 @@
 package com.smartcampus.back.service;
 
-import com.studymate.back.config.JwtProvider;
-import com.studymate.back.dto.*;
-import com.studymate.back.entity.User;
-import com.studymate.back.repository.UserRepository;
-import com.studymate.back.utils.EmailUtil;
+import com.smartcampus.back.config.JwtProvider;
+import com.smartcampus.back.dto.*;
+import com.smartcampus.back.entity.User;
+import com.smartcampus.back.repository.UserRepository;
+import com.smartcampus.back.utils.EmailUtil;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import java.util.Optional;
+
 import java.util.concurrent.TimeUnit;
 
 /**
- * 회원가입, 로그인, 이메일 인증 관련 로직 처리
+ * 인증 및 회원 관리 서비스
+ * 회원가입, 로그인, 이메일 인증, 아이디 찾기, 비밀번호 재설정 등 인증 관련 로직을 처리
  */
 @Service
 @RequiredArgsConstructor
@@ -26,127 +26,133 @@ public class AuthService {
     private final RedisTemplate<String, String> redisTemplate;
     private final EmailUtil emailUtil;
 
+    // ========================= 1. 회원가입 관련 메서드 ==================================
+
     /**
-     * 아이디 중복 확인 메서드
-     * @param username 아이디
-     * @return 중복확인 결과
+     * 아이디 중복 확인
+     * @param username 사용자 아이디
+     * @return 중복 여부 (true: 중복됨, false: 사용 가능)
      */
     public boolean checkUsername(String username) {
         return userRepository.existsByUsername(username);
     }
 
     /**
-     * 이메일 인증번호 전송 메서드 -> 이메일 인증을 위한 6자리 코드 생성 후 Redis에 저장 -> 5분 후 만료
-     * @param email 이메일
+     * 닉네임 중복 확인
+     * @param nickname 사용자 닉네임
+     * @return 중복 여부 (true: 중복됨, false: 사용 가능)
      */
-    public void sendVerificationEmail(String email) {
-        String verificationCode = emailUtil.generateVerificationCode();
-        redisTemplate.opsForValue().set(email, verificationCode, 5, TimeUnit.MINUTES);
-        try {
-            emailUtil.sendVerificationEmail(email, verificationCode);
-        } catch (Exception e) {
-            throw new RuntimeException("이메일 전송 중 오류 발생: " + e.getMessage());
-        }
+    public boolean checkNickname(String nickname) {
+        return userRepository.existsByNickname(nickname);
     }
 
     /**
-     * 이메일 인증번호 검증 메서드
-     * -> Redis에서 이메일 인증번호 검증 후 emailVerified 값을 true로 업데이트
-     * @param request 인증번호 검증 DTO
+     * 이메일 인증번호 발송
+     * -> 6자리 코드 생성 후 Redis에 저장 (5분 후 만료)
+     * @param email 사용자 이메일
+     */
+    public void sendVerificationCode(String email) {
+        String verificationCode = emailUtil.generateVerificationCode();
+        redisTemplate.opsForValue().set(email, verificationCode, 5, TimeUnit.MINUTES);
+        emailUtil.sendVerificationEmail(email, verificationCode);
+    }
+
+    /**
+     * 이메일 인증번호 검증
+     * -> Redis에 저장된 인증번호와 비교하여 검증
+     * @param request 이메일 인증 요청 (이메일, 인증번호)
      */
     public void verifyEmail(EmailVerificationRequest request) {
         String storedCode = redisTemplate.opsForValue().get(request.getEmail());
         if(storedCode == null || !storedCode.equals(request.getCode())) {
-            throw new IllegalArgumentException("유효하지 않은 인증번호입니다.");
-        }
-        Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
-        if(userOpt.isPresent()) {
-            User user = userOpt.get();
-            user.setEmailVerified(true);
-            userRepository.save(user);
+             throw new IllegalArgumentException("유효하지 않은 인증번호입니다.");
         }
     }
 
     /**
-     * 회원가입 메서드
-     * -> 이메일 인증이 완료된 경우에만 회원가입 가능
-     * -> 아이디 중복 확인, 입력값 유효성 검사 추가
-     * -> 비밀번호는 BCrypt 암호화 후 저장
-     * -> 프론트에서 아이디 중복확인, 이메일 인증, 빈칸 여부 모두 확인하고 모든 절차가 완료되었을 경우에만 회원가입 버튼이 활성화되기에 서버에서는 별도로 체크하지 않음
+     * 회원가입 처리
+     * -> 이메일 인증 여부 확인 후 회원가입 진행
+     * -> 비밀번호는 BCrypt 암호화하여 저장
      * @param request 회원가입 요청 DTO
      */
     public void register(RegisterRequest request) {
-        // 회원 정보 저장
-        User user = new User();
-        user.setUsername(request.getUsername());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setName(request.getName());
-        user.setPhone(request.getPhone());
-        user.setEmail(request.getEmail());
+        if(!userRepository.existsByEmail(request.getEmail())) {
+            throw new IllegalArgumentException("이메일 인증이 완료되지 않았습니다.");
+        }
+        User user = User.builder()
+                .username(request.getUsername())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .nickname(request.getNickname())
+                .email(request.getEmail())
+                .role("user")
+                .build();
         userRepository.save(user);
     }
 
+    // ========================= 2. 로그인 관련 메서드 ==================================
 
     /**
-     * 로그인 메서드
-     * 아이디 및 비밀번호 검증 후 JWT 발급
-     * Access Token: 1시간 동안 유효 (Redis 저장)
-     * Refresh Token: 30일 동안 유효 (BCrypt 암호화 후 MySQL에 저장)
-     * @param request 로그인 DTO
-     * @return Access Token, Refresh Token, 사용자 정보 (username, email, name)
+     * 로그인 처리
+     * -> 아이디와 비밀번호를 검증 후 JWT 발급
+     * @param request 로그인 요청 DTO
+     * @return Access Token, Refresh Token, 사용자 정보 반환
      */
     public LoginResponse login(LoginRequest request) {
-        // 사용자 조회
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
-        // 비밀번호 검증
         if(!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("비밀번호를 잘못 입력하셨습니다.");
+            throw new RuntimeException("비밀번호르 잘못 입력하셨습니다.");
         }
 
-        // JWT Access Token 및 Refresh Token 생성
         String accessToken = jwtProvider.generateAccessToken(user.getUsername());
         String refreshToken = jwtProvider.generateRefreshToken(user.getUsername());
 
-        // Access Token을 Redis에 저장 -> 1시간 만료
         redisTemplate.opsForValue().set(user.getUsername(), accessToken, 1, TimeUnit.HOURS);
-
-        // Refresh Token을 BCrypt 암호화하여 MySQL에 저장 -> 30일 만료
         user.setRefreshToken(passwordEncoder.encode(refreshToken));
         userRepository.save(user);
 
-        // 로그인 성공 시 Access Token, Refresh Token, 사용자 정보 반환
-        return new LoginResponse(accessToken, refreshToken, user.getUsername(), user.getEmail(), user.getName());
+        return new LoginResponse(accessToken, refreshToken, user.getUsername(), user.getEmail(), user.getNickname());
     }
 
+    public void kakaoLogin() {
+        throw new UnsupportedOperationException("카카오 로그인 기능은 아직 구현되지 않았습니다.");
+    }
+
+    public void googleLogin() {
+        throw new UnsupportedOperationException("구글 로그인 기능은 아직 구현되지 않았습니다.");
+    }
+
+    // ========================= 3. 아이디 찾기 관련 메서드 ==================================
+
     /**
-     * 아이디 찾기 메서드
-     * @param request UsernameFindRequest (요청 DTO)
-     * @return UsernameFindResponse (응답 DTO)
+     * 아이디 찾기
+     * -> 이메일을 통해 아이디 찾기
+     * @param request
+     * @return
      */
     public UsernameFindResponse findUsername(UsernameFindRequest request) {
-        // 이메일로 아이디 검색
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("해당 이메일로 가입된 사용자를 찾을 수 없습니다."));
-
-        // 응답 생성
         return new UsernameFindResponse(true, user.getUsername(), "아이디 찾기에 성공했습니다.");
     }
 
+    // ========================= 4. 비밀번호 재설정 관련 메서드 ==================================
+
+    /**
+     * 비밀번호 재설정 (이메일 인증 후 비밀번호 변경)
+     * -> 이메일 인증 완료 후 비밀번호 변경 진행
+     * @param request 비밀번호 재설정 요청 DTO
+     * @return 재설정 결과 응답 DTO
+     */
     public ResetPasswordResponse resetPassword(ResetPasswordRequest request) {
-        // 아이디로 사용자 조회
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-        // 새 비밀번호 암호화
         String encryptedPassword = passwordEncoder.encode(request.getNewPassword());
-
-        // 사용자 비밀번호 업데이트
         user.setPassword(encryptedPassword);
         userRepository.save(user);
 
-        // 성공 응답 반환
         return new ResetPasswordResponse(true, "비밀번호가 성공적으로 변경되었습니다.");
     }
 }

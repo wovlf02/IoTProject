@@ -1,7 +1,7 @@
 package com.smartcampus.back.controller;
 
-import com.studymate.back.dto.*;
-import com.studymate.back.service.AuthService;
+import com.smartcampus.back.dto.*;
+import com.smartcampus.back.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
