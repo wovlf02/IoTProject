@@ -1,5 +1,6 @@
 package com.smartcampus.back.service;
 
+import com.smartcampus.back.dto.ReportRequest;
 import com.smartcampus.back.entity.CommentReply;
 import com.smartcampus.back.entity.Post;
 import com.smartcampus.back.entity.PostComment;
@@ -152,5 +153,30 @@ public class PostCommentService {
 
         commentReplyRepository.delete(reply);
         return "대댓글이 삭제되었습니다.";
+    }
+
+
+    // =================== 3. 댓글 및 대댓글 신고 기능 ======================
+
+    /**
+     * 댓글 신고
+     * @param commentId 신고할 댓글 ID
+     * @param request 신고 요청 DTO
+     * @return 신고 성공 메시지
+     */
+    public String reportComment(Long commentId, ReportRequest request) {
+        PostComment comment = postCommentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("댓글을 찾을 수 없습니다."));
+
+        // 신고 기록을 저장하는 로직 추가 가능
+        return "댓글이 신고되었습니다.";
+    }
+
+    public String reportReply(Long replyId, ReportRequest request) {
+        CommentReply reply = commentReplyRepository.findById(replyId)
+                .orElseThrow(() -> new IllegalArgumentException("대댓글을 찾을 수 없습니다."));
+
+        // 신고 기록을 저장하는 로직 추가 가능
+        return "대댓글이 신고되었습니다.";
     }
 }
