@@ -1,4 +1,4 @@
 package com.smartcampus.back.service;
 
-public class PostService {
+public class ChatMessageService {
 }
