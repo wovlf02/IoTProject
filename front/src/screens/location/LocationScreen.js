@@ -1,136 +1,125 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, StyleSheet, Text, ActivityIndicator, Alert, PermissionsAndroid, Platform } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import Geolocation from '@react-native-community/geolocation';
 import { WebView } from 'react-native-webview';
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Geolocation from 'react-native-geolocation-service';
-
-// ✅ 위치 가져오기 & API 호출하는 커스텀 훅
-const useFetchLocationAndData = () => {
-    const [location, setLocation] = useState(null);
-
-    useEffect(() => {
-        const requestLocationPermission = async () => {
-            if (Platform.OS === 'android') {
-                const granted = await PermissionsAndroid.request(
-                    PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
-                );
-                return granted === PermissionsAndroid.RESULTS.GRANTED;
-            }
-            return true;
-        };
-
-        const fetchLocationAndData = async () => {
-            const hasPermission = await requestLocationPermission();
-            if (!hasPermission) {
-                Alert.alert('위치 권한이 필요합니다.');
-                return;
-            }
-
-            Geolocation.getCurrentPosition(
-                async (position) => {
-                    const { latitude, longitude } = position.coords;
-                    setLocation({ latitude, longitude });
-
-                    try {
-                        const token = await AsyncStorage.getItem('authToken');
-                        await axios.post(
-                            'http://10.0.2.2:8080/api/location/current',
-                            { latitude, longitude },
-                            { headers: { Authorization: `Bearer ${token}` } }
-                        );
-                    } catch (error) {
-                        console.error('❌ 위치 데이터 전송 실패:', error);
-                    }
-                },
-                (error) => {
-                    console.error('❌ 위치 정보 가져오기 실패:', error);
-                },
-                { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
-            );
-        };
-
-        fetchLocationAndData();
-    }, []);
-
-    return location;
-};
 
 const LocationScreen = () => {
-    const location = useFetchLocationAndData();
+    const [latitude, setLatitude] = useState(37.5665); // 기본값: 서울
+    const [longitude, setLongitude] = useState(126.9780); // 기본값: 서울
     const webViewRef = useRef(null);
 
     useEffect(() => {
-        if (location && webViewRef.current) {
-            webViewRef.current.postMessage(JSON.stringify(location));
-        }
-    }, [location]);
+        Geolocation.getCurrentPosition(
+            position => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
 
-    const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey="></script>
-      <style> * { margin: 0; padding: 0; } #map { width: 100%; height: 100vh; } </style>
-    </head>
-    <body>
-      <div id="map"></div>
-      <script>
-        var map, marker;
-        function initMap(lat, lng) {
-          var mapContainer = document.getElementById('map');
-          var mapOption = { center: new kakao.maps.LatLng(lat, lng), level: 3 };
-          map = new kakao.maps.Map(mapContainer, mapOption);
-          marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(lat, lng), map: map });
-        }
-        function updateLocation(lat, lng) {
-          if (!map || !marker) return;
-          var newCenter = new kakao.maps.LatLng(lat, lng);
-          map.setCenter(newCenter);
-          marker.setPosition(newCenter);
-        }
-        window.addEventListener('message', function(event) {
-          var data = JSON.parse(event.data);
-          if (data.latitude && data.longitude) {
-            if (!map) initMap(data.latitude, data.longitude);
-            else updateLocation(data.latitude, data.longitude);
-          }
-        });
-      </script>
-    </body>
-    </html>
-  `;
+                setLatitude(lat);
+                setLongitude(lon);
+
+                // WebView가 로드된 후 좌표 전송 (0.5초 지연)
+                setTimeout(() => {
+                    if (webViewRef.current) {
+                        webViewRef.current.postMessage(JSON.stringify({ latitude: lat, longitude: lon }));
+                    }
+                }, 500);
+            },
+            error => {
+                console.log("위치 정보를 가져올 수 없음:", error);
+            },
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+        );
+    }, []);
+
+    // Kakao Maps HTML 코드
+    const kakaoMapHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=e84461afa8078822e18c5b6af6752df6"></script>
+            <style>
+                * { margin: 0; padding: 0; }
+                #map { width: 100%; height: 100vh; }
+            </style>
+        </head>
+        <body>
+            <div id="map"></div>
+            <script>
+                var map;
+                var marker;
+
+                function initMap(lat, lon) {
+                    var container = document.getElementById('map');
+                    var options = {
+                        center: new kakao.maps.LatLng(lat, lon),
+                        level: 3
+                    };
+                    map = new kakao.maps.Map(container, options);
+
+                    marker = new kakao.maps.Marker({
+                        position: new kakao.maps.LatLng(lat, lon),
+                        map: map
+                    });
+                }
+
+                // React Native에서 좌표를 받으면 지도 업데이트
+                window.document.addEventListener("message", function(event) {
+                    var location = JSON.parse(event.data);
+                    var lat = location.latitude;
+                    var lon = location.longitude;
+                    
+                    if (!map) {
+                        initMap(lat, lon);
+                    } else {
+                        var moveLatLon = new kakao.maps.LatLng(lat, lon);
+                        map.setCenter(moveLatLon);
+                        marker.setPosition(moveLatLon);
+                    }
+                });
+
+                // 기본 위치로 지도 초기화 (서울)
+                initMap(37.5665, 126.9780);
+            </script>
+        </body>
+        </html>
+    `;
 
     return (
         <View style={styles.container}>
-            {location ? (
-                <WebView
-                    ref={webViewRef}
-                    originWhitelist={['*']}
-                    source={{ html }}
-                    javaScriptEnabled
-                    domStorageEnabled
-                    onLoadEnd={() => {
-                        if (location) {
-                            webViewRef.current?.postMessage(JSON.stringify(location));
-                        }
-                    }}
-                />
-            ) : (
-                <View style={styles.loading}>
-                    <Text>위치 정보를 불러오는 중...</Text>
-                    <ActivityIndicator size="large" color="#0000ff" />
-                </View>
-            )}
+            <Text style={styles.text}>위도: {latitude}</Text>
+            <Text style={styles.text}>경도: {longitude}</Text>
+
+            <WebView
+                ref={webViewRef}
+                originWhitelist={['*']}
+                source={{ html: kakaoMapHtml }}
+                javaScriptEnabled
+                domStorageEnabled
+                style={styles.webview}
+                onMessage={(event) => {
+                    console.log("WebView에서 받은 메시지:", event.nativeEvent.data);
+                }}
+            />
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1 },
-    loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    text: {
+        fontSize: 16,
+        marginBottom: 10,
+    },
+    webview: {
+        width: '100%',
+        height: 500,
+    },
 });
 
 export default LocationScreen;

@@ -47,7 +47,7 @@ const IntroScreen = ({ navigation }) => {
                 {/*테스트용*/}
                 <TouchableOpacity
                     style={styles.testButton}
-                    onPress={() => navigation.navigate('Location')}
+                    onPress={() => navigation.navigate('KakaoMap')}
                 >
                     <Text style={styles.buttonText}>테스트</Text>
                 </TouchableOpacity>
