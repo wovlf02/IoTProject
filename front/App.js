@@ -13,6 +13,7 @@ import LoginScreen from './src/screens/auth/LoginScreen';
 import RegisterScreen from './src/screens/auth/RegisterScreen';
 import FindAccountScreen from "./src/screens/auth/FindAccountScreen";
 import ResetPasswordScreen from "./src/screens/auth/ResetPasswordScreen";
+import KakaoMapScreen from "./src/screens/location/KakaoMapScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -66,6 +67,7 @@ const App = () => (
             <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="FindAccount" component={FindAccountScreen} />
             <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+            <Stack.Screen name="KakaoMap" component={KakaoMapScreen} />
             <Stack.Screen
                 name="Main"  // 🔹 기존의 "Home"을 "MainTabs"로 변경하여 네비게이션 충돌 방지
                 component={MainTabNavigator}

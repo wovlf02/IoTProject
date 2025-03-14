@@ -10,6 +10,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@react-native-community/geolocation": "^3.4.0",
     "@react-native-community/masked-view": "^0.1.11",
     "@react-native-picker/picker": "^2.11.0",
     "@react-native-seoul/kakao-login": "^5.4.1",
@@ -25,6 +26,7 @@
     "react-native-safe-area-context": "^5.1.0",
     "react-native-screens": "^4.5.0",
     "react-native-tab-view": "^4.0.5",
+    "react-native-webview": "^13.13.4",
     "react-navigation": "^5.0.0"
   },
   "devDependencies": {
