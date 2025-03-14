@@ -9,7 +9,7 @@ import java.util.*;
 
 @CrossOrigin(origins = "*")
 @RestController
-@RequestMapping("/api/location")
+//@RequestMapping("/api/location")
 public class LocationController {
 
     @GetMapping("/current")

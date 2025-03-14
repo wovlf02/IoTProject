@@ -32,6 +32,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * Authorization 헤더에서 JWT를 추출
      * 유효한 경우 SecurityContext에 사용자 정보 저장
      */
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,

@@ -10,7 +10,7 @@ import java.util.Optional;
  * JPA를 활용한 사용자 정보 접근 Layer
  * 기본적인 CRUD 기능 제공
  */
-@Repository
+@Repository("userRepository")
 public interface UserRepository extends JpaRepository<User, Long> {
 
     /**
