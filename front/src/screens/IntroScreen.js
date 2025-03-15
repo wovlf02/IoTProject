@@ -6,7 +6,7 @@ const IntroScreen = ({ navigation }) => {
         <View style={styles.container}>
             {/* 로고 및 앱 이름 */}
             <View style={styles.logoContainer}>
-                <Image source={require('../assets/check.png')} style={styles.logo} />
+                <Image source={require('../assets/god.png')} style={styles.logo} />
                 <Text style={styles.appName}>SmartCampus</Text>
             </View>
 
@@ -16,7 +16,7 @@ const IntroScreen = ({ navigation }) => {
             {/* 주요 기능 아이콘 */}
             <View style={styles.iconSection}>
                 <View style={styles.iconCard}>
-                    <Image source={require('../assets/check.png')} style={styles.icon} />
+                    <Image source={require('../assets/joomin_map.png')} style={styles.icon} />
                     <Text style={styles.iconLabel}>길안내</Text>
                 </View>
                 <View style={styles.iconCard}>
@@ -24,9 +24,10 @@ const IntroScreen = ({ navigation }) => {
                     <Text style={styles.iconLabel}>시간표</Text>
                 </View>
                 <View style={styles.iconCard}>
-                    <Image source={require('../assets/group.png')} style={styles.icon} />
+                    <Image source={require('../assets/chatbot.png')} style={styles.icon} />
                     <Text style={styles.iconLabel}>챗봇</Text>
                 </View>
+
             </View>
 
 
@@ -53,6 +54,17 @@ const IntroScreen = ({ navigation }) => {
                 </TouchableOpacity>
                 {/*테스트용*/}
             </View>
+
+            {/* 프론트 테스트 버튼을 별도의 View로 분리 */}
+            <View style={styles.singleButtonContainer}>
+                <TouchableOpacity
+                    style={styles.testButton2}
+                    onPress={() => navigation.navigate('KakaoMap')}
+                >
+                    <Text style={styles.buttonText}>프론트 테스트</Text>
+                </TouchableOpacity>
+            </View>
+
         </View>
     );
 };
@@ -138,12 +150,31 @@ const styles = StyleSheet.create({
     },
 
 
+
     buttonText: {
         color: '#FFF',
         fontSize: 16,
         textAlign: 'center',
         fontWeight: 'bold',
     },
+
+    // 주민 프론트 테스트 버튼 (임시)
+    singleButtonContainer: {
+        width: '80%',
+        marginTop: 40,
+        borderRadius: 25,
+    },
+
+    testButton2 : {
+        backgroundColor: '#007BFF',
+        paddingVertical: 15,
+        width: '100%', // 가득 차도록 설정
+        borderRadius: 25,
+        alignItems: 'center', // 내부 텍스트 중앙 정렬
+    },
+
+
+
 });
 
 export default IntroScreen;
