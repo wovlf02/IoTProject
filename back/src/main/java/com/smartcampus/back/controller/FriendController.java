@@ -122,4 +122,42 @@ public class FriendController {
         friendService.deleteFriend(friendId);
         return ResponseEntity.ok("친구가 삭제되었습니다.");
     }
+
+    // ============================ 4. 친구 차단 API ==============================
+
+    /**
+     * [친구 차단]
+     * 
+     * 특정 사용자를 차단하여 모든 상호작용 차단
+     * 
+     * @param friendId 차단할 친구 ID
+     * @return 차단 성공 메시지
+     */
+    @PostMapping("/{friendId}/block")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<String> blockFriend(@PathVariable Long friendId) {
+        friendService.blockFriend(friendId);
+        return ResponseEntity.ok("사용자가 차단되었습니다.");
+    }
+
+    // ============================ 4. 친구 차단 API ==============================
+
+    /**
+     * [친구 신고]
+     * 
+     * 부적절한 사용자를 신고 (신고 사유 포함)
+     * 
+     * @param friendId 신고 대상 친구 ID
+     * @param request 신고 요청 DTO
+     * @return 신고 성공 메시지
+     */
+    @PostMapping("/{friendId}/report")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<String> reportFriend(
+            @PathVariable Long friendId,
+            @RequestBody ReportRequest request
+    ) {
+        friendService.reportFriend(friendId, request);
+        return ResponseEntity.ok("신고가 접수되었습니다.");
+    }
 }
