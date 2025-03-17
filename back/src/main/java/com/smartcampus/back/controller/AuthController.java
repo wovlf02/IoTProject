@@ -161,9 +161,39 @@ public class AuthController {
 
     // ============================ 4. 비밀번호 재설정 관련 API =============================
 
+    /**
+     * [비밀번호 재설정] 이메일 인증번호 발송
+     *
+     * @param request 이메일 정보
+     * @return 이메일 발송 결과 메시지
+     */
     @PostMapping("/reset-password/send-code")
     public ResponseEntity<String> sendPasswordResetCode(@RequestBody EmailCheckRequest request) {
         authService.sendPasswordResetCode(request.getEmail());
         return ResponseEntity.ok("비밀번호 재설정을 위한 인증번호가 이메일로 발송되었습니다.");
+    }
+
+    /**
+     * [비밀번호 재설정] 인증번호 검증
+     *
+     * @param request 이메일 & 인증번호 정보
+     * @return 인증 결과 (true: 인증 성공, false: 인증 실패)
+     */
+    @PostMapping("/reset-password/verify-code")
+    public ResponseEntity<Boolean> verifyPasswordResetCode(@RequestBody EmailVerificationRequest request) {
+        boolean isValid = authService.verifyPasswordResetCode(request.getEmail(), request.getCode());
+        return ResponseEntity.ok(isValid);
+    }
+
+    /**
+     * [비밀번호 재설정] 최종 비밀번호 변경
+     *
+     * @param request 비밀번호 변경 정보 (이메일, 새 비밀번호)
+     * @return 비밀번호 변경 결과 메시지
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@Validated @RequestBody PasswordResetRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok("비밀번호가 성공적으로 변경되었습니다.");
     }
 }
