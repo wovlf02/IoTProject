@@ -11,7 +11,7 @@ const IntroScreen = ({ navigation }) => {
             </View>
 
             {/* 간략한 설명 */}
-            <Text style={styles.mainDescription}>IOT프로젝트 메인화면</Text>
+            <Text style={styles.mainDescription}>그냥 다 해줬잖아</Text>
 
             {/* 주요 기능 아이콘 */}
             <View style={styles.iconSection}>
@@ -59,11 +59,18 @@ const IntroScreen = ({ navigation }) => {
             <View style={styles.singleButtonContainer}>
                 <TouchableOpacity
                     style={styles.testButton2}
-                    onPress={() => navigation.navigate('KakaoMap')}
+                    onPress={() => navigation.navigate('TestLoginScreen')}
                 >
                     <Text style={styles.buttonText}>프론트 테스트</Text>
                 </TouchableOpacity>
             </View>
+
+            <View style={styles.footerContainer}>
+                <Text style={styles.footerText}>Created by CoMong</Text>
+                <Image source={require('../assets/copyright.png')} style={styles.footerIcon} />
+            </View>
+
+
 
         </View>
     );
@@ -158,19 +165,38 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
 
-    // 주민 프론트 테스트 버튼 (임시)
+    // 주민 프론트 테스트 버튼 컨테이너
     singleButtonContainer: {
         width: '80%',
         marginTop: 40,
         borderRadius: 25,
     },
-
+    // 주민 프론트 테스트 버튼 위치(임시)
     testButton2 : {
         backgroundColor: '#007BFF',
         paddingVertical: 15,
         width: '100%', // 가득 차도록 설정
         borderRadius: 25,
         alignItems: 'center', // 내부 텍스트 중앙 정렬
+    },
+
+    footerContainer: {
+        flexDirection: 'row', // 가로 정렬
+        alignItems: 'center', // 세로 중앙 정렬
+        justifyContent: 'center', // 가운데 정렬
+        position: 'absolute',
+        bottom: 10,
+        width: '100%',
+    },
+    footerText: {
+        fontSize: 12,
+        color: '#000', // 검정색으로 변경
+        textAlign: 'center',
+        marginRight: 5, // 아이콘과 간격 추가
+    },
+    footerIcon: {
+        width: 14, // 아이콘 크기 조정
+        height: 14,
     },
 
 
