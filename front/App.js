@@ -1,10 +1,14 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useNavigation } from '@react-navigation/native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { Image } from 'react-native';
-
-
+import { TouchableOpacity, Image } from 'react-native';
+import homeIcon from './src/assets/home.png';
+import searchIcon from './src/assets/search.png';
+import communityIcon from './src/assets/community.png';
+import mypageIcon from './src/assets/mypage.png';
+import backIcon from './src/assets/back.png'; // 뒤로가기 아이콘
 // 스크린들 임포트
 import CommunityScreen from './src/screens/community/CommunityMainScreen';
 import PersonalStudyMainScreen from './src/screens/personal/PersonalStudyMainScreen';
@@ -27,44 +31,46 @@ const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
 // Tab Navigator의 화면 옵션
-const screenOptions = ({ route }) => ({
-    tabBarIcon: ({ focused, size }) => {
-        let iconPath;
-        switch (route.name) {
-            case 'TestHomeScreen':
-                iconPath = require('./src/assets/home.png');
-                break;
-            case 'TestSearchScreen':
-                iconPath = require('./src/assets/search.png');
-                break;
-            case 'TestCommunityScreen':
-                iconPath = require('./src/assets/community.png');
-                break;
-            case 'TestMyPageScreen':
-                iconPath = require('./src/assets/mypage.png');
-                break;
-        }
+const screenOptions = ({ route }) => {
+    const navigation = useNavigation(); // 네비게이션 객체 가져오기
 
-        // focused 상태에 따라 아이콘 색상을 변경
-        const iconColor = focused ? '#007AFF' : '#A9A9A9'; // 활성화 시 파란색, 비활성화 시 회색
+    let iconPath;
+    switch (route.name) {
+        case '내 현재 위치': // ✅ Tab.Screen의 name과 맞춰야 함
+            iconPath = homeIcon;
+            break;
+        case '건물 찾기':
+            iconPath = searchIcon;
+            break;
+        case '자유게시판':
+            iconPath = communityIcon;
+            break;
+        case '마이페이지':
+            iconPath = mypageIcon;
+            break;
+    }
 
-        // 항상 아이콘은 보이고 색상만 변경
-        return (
+    return {
+        tabBarIcon: ({ focused, size }) => (
             <Image
                 source={iconPath}
                 style={{
                     width: size,
                     height: size,
-                    // tintColor: iconColor // 색상만 변경
                 }}
             />
-        );
-    },
-    // 활성화된 탭과 비활성화된 탭의 색상 설정 (글씨 색상)
-    tabBarActiveTintColor: '#007AFF',
-    tabBarInactiveTintColor: '#A9A9A9', // 비활성화된 탭의 색상은 회색
-});
+        ),
+        tabBarActiveTintColor: '#007AFF',
+        tabBarInactiveTintColor: '#A9A9A9',
 
+        // ⬇️ 뒤로 가기 버튼 추가
+        headerLeft: () => (
+            <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginLeft: 15 }}>
+                <Image source={backIcon} style={{ width: 24, height: 24 }} />
+            </TouchableOpacity>
+        ),
+    };
+};
 
 // MainTabNavigator (탭 네비게이터)
 const MainTabNavigator = () => (
