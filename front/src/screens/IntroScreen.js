@@ -11,7 +11,11 @@ const IntroScreen = ({ navigation }) => {
             </View>
 
             {/* 간략한 설명 */}
+<<<<<<< HEAD
             <Text style={styles.mainDescription}>그냥 다 해줬잖아</Text>
+=======
+            <Text style={styles.mainDescription}>IOT 스마트 캠퍼스 네비게이션</Text>
+>>>>>>> 1e1785d (테스트 커밋)
 
             {/* 주요 기능 아이콘 */}
             <View style={styles.iconSection}>
