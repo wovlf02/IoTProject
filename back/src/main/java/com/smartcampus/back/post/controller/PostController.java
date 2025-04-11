@@ -3,8 +3,10 @@ package com.smartcampus.back.post.controller;
 import com.smartcampus.back.post.dto.post.*;
 import com.smartcampus.back.post.service.PostService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -22,11 +24,15 @@ public class PostController {
     /**
      * 게시글 생성
      *
-     * @param request 게시글 생성 요청 데이터 (제목, 내용, 작성자 등)
-     * @return 생성된 게시글의 ID와 성공 메시지
+     * @param request 게시글 생성 요청 데이터 (제목, 내용, 작성자 ID, 공개 여부 등)
+     * @param files 첨부파일 리스트 (선택적)
+     * @return 생성된 게시글의 ID와 성공 메시지를 포함한 응답
      */
-    @PostMapping
-    public ResponseEntity<PostCreateResponse> createPost(@RequestBody PostCreateRequest request) {
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<PostCreateResponse> createPost(
+            @RequestPart("post") PostCreateRequest request,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files
+    ) {
         PostCreateResponse response = postService.createPost(request);
         return ResponseEntity.ok(response);
     }
@@ -35,12 +41,17 @@ public class PostController {
      * 게시글 수정
      *
      * @param postId 수정할 게시글 ID
-     * @param request 수정할 게시글 내용 요청 데이터
-     * @return 수정 완료 메시지
+     * @param request 게시글 내용 및 첨부파일 삭제 목록
+     * @param newFiles 새로 추가할 첨부파일 리스트
+     * @return 수정 완료 응답
      */
-    @PutMapping("/{postId}")
-    public ResponseEntity<PostUpdateResponse> updatePost(@PathVariable Long postId, @RequestBody PostUpdateRequest request) {
-        PostUpdateResponse response = postService.updatePost(postId, request);
+    @PutMapping(value = "/{postId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<PostUpdateResponse> updatePost(
+            @PathVariable Long postId,
+            @RequestPart("post") PostUpdateRequest request,
+            @RequestPart(value = "newFiles", required = false) List<MultipartFile> newFiles
+    ) {
+        PostUpdateResponse response = postService.updatePost(postId, request, newFiles);
         return ResponseEntity.ok(response);
     }
 
