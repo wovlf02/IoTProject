@@ -25,7 +25,7 @@ public class Like {
      */
     @Id
     @Column(name = "user_id")
-    private String userId;
+    private Long userId;
 
     /**
      * 게시글 ID (복합키)

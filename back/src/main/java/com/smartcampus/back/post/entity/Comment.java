@@ -3,6 +3,7 @@ package com.smartcampus.back.post.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -41,6 +42,12 @@ public class Comment {
      */
     @CreationTimestamp
     private LocalDateTime createdAt;
+
+    /**
+     * 수정된 시간
+     */
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 
     /**
      * 연결된 게시글
