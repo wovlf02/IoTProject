@@ -1,25 +1,41 @@
 package com.smartcampus.back.post.entity;
 
+import com.smartcampus.back.post.enums.AttachmentTargetType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.LocalDateTime;
 
 /**
  * 첨부파일 엔티티
- * 게시글에 업로드된 파일 정보 (이름, 경로, 사이즈, 타입 등)를 저장
+ * 게시글/댓글/대댓글 등 다양한 객체에 첨부된 파일 정보를 저장
  */
 @Entity
-@Table(name = "post_attachments")
+@Table(name = "attachments")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = "post") // 순환 참조 방지 (선택)
 public class Attachment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    /**
+     * 첨부 대상 ID (게시글, 댓글, 대댓글 등 공통 사용)
+     */
+    @Column(nullable = false)
+    private Long targetId;
+
+    /**
+     * 첨부 대상 타입 (게시글, 댓글, 대댓글 구분용)
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private AttachmentTargetType targetType;
 
     /**
      * 원본 파일 이름
@@ -34,27 +50,26 @@ public class Attachment {
     private String storedName;
 
     /**
-     * 저장된 전체 파일 경로 (로컬 절대경로 또는 S3 경로 등)
+     * 저장된 전체 파일 경로 (로컬 경로 또는 S3 URL)
      */
     @Column(nullable = false)
     private String filePath;
 
     /**
-     * 파일 크기 (바이트)
+     * 파일 크기 (바이트 단위)
      */
     @Column(nullable = false)
     private Long fileSize;
 
     /**
-     * 파일 타입 (MIME 또는 확장자)
+     * 파일 MIME 타입 또는 확장자
      */
     @Column(nullable = false)
     private String fileType;
 
     /**
-     * 이 파일이 속한 게시글
+     * 업로드 시각
      */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "post_id", nullable = false)
-    private Post post;
+    @CreationTimestamp
+    private LocalDateTime uploadedAt;
 }

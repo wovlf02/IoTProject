@@ -4,14 +4,18 @@ import com.smartcampus.back.post.dto.reply.ReplyCreateRequest;
 import com.smartcampus.back.post.dto.reply.ReplyResponse;
 import com.smartcampus.back.post.dto.reply.ReplyUpdateRequest;
 import com.smartcampus.back.post.service.ReplyService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+import org.springframework.core.io.Resource;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-/**
- * 대댓글(답글) 관련 요청을 처리하는 REST 컨트롤러
- * 대댓글 생성, 수정, 삭제 기능 제공
- */
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/posts/{postId}/comments/{commentId}/replies")
 @RequiredArgsConstructor
@@ -20,50 +24,36 @@ public class ReplyController {
     private final ReplyService replyService;
 
     /**
-     * 특정 댓글에 대댓글(답글) 작성
-     *
-     * @param postId 대댓글(답글)을 작성할 게시글 ID
-     * @param commentId 대댓글(답글)을 작성할 댓글 ID
-     * @param request 대댓글 작성 요청 데이터
-     * @return 생성된 대댓글 정보
+     * 대댓글 작성 + 첨부파일 업로드
      */
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ReplyResponse> createReply(
             @PathVariable Long postId,
             @PathVariable Long commentId,
-            @RequestBody ReplyCreateRequest request
+            @RequestPart("reply") ReplyCreateRequest request,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files
     ) {
-        ReplyResponse response = replyService.createReply(postId, commentId, request);
+        ReplyResponse response = replyService.createReply(postId, commentId, request, files);
         return ResponseEntity.ok(response);
     }
 
     /**
-     * 특정 대댓글 수정
-     *
-     * @param postId 대댓글이 속한 게시글 ID
-     * @param commentId 대댓글이 속한 댓글 ID
-     * @param replyId 수정할 대댓글 ID
-     * @param request 대댓글 수정 요청 데이터
-     * @return 수정된 대댓글 정보
+     * 대댓글 수정 + 파일 추가 가능
      */
-    @PutMapping("/{replyId}")
+    @PutMapping(value = "/{replyId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ReplyResponse> updateReply(
             @PathVariable Long postId,
             @PathVariable Long commentId,
             @PathVariable Long replyId,
-            @RequestBody ReplyUpdateRequest request
+            @RequestPart("reply") ReplyUpdateRequest request,
+            @RequestPart(value = "newFiles", required = false) List<MultipartFile> newFiles
     ) {
-        ReplyResponse response = replyService.updateReply(postId, commentId, replyId, request);
+        ReplyResponse response = replyService.updateReply(postId, commentId, replyId, request, newFiles);
         return ResponseEntity.ok(response);
     }
 
     /**
-     * 특정 대댓글 삭제
-     *
-     * @param postId 대댓글이 속한 게시글 ID
-     * @param commentId 대댓글이 속한 댓글 ID
-     * @param replyId 삭제할 대댓글 ID
-     * @return 삭제 성공 메시지
+     * 대댓글 삭제
      */
     @DeleteMapping("/{replyId}")
     public ResponseEntity<String> deleteReply(
@@ -73,5 +63,22 @@ public class ReplyController {
     ) {
         replyService.deleteReply(postId, commentId, replyId);
         return ResponseEntity.ok("대댓글이 성공적으로 삭제되었습니다.");
+    }
+
+    /**
+     * 대댓글 첨부파일 다운로드
+     */
+    @GetMapping("/{replyId}/attachments/{fileId}/download")
+    public ResponseEntity<Resource> downloadAttachment(
+            @PathVariable Long replyId,
+            @PathVariable Long fileId
+    ) throws IOException {
+        Resource resource = replyService.loadAttachmentFile(replyId, fileId);
+        String filename = URLEncoder.encode(resource.getFilename(), StandardCharsets.UTF_8);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .body(resource);
     }
 }

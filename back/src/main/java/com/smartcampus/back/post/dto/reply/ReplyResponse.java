@@ -14,27 +14,44 @@ import java.time.LocalDateTime;
 public class ReplyResponse {
 
     /**
-     * 대댓글 ID
+     * 대댓글 ID (고유 식별자)
      */
     private Long replyId;
 
     /**
-     * 내용
+     * 대댓글 본문 내용
      */
     private String content;
 
     /**
-     * 작성자 ID
+     * 작성자의 사용자 ID
      */
     private Long writerId;
 
     /**
-     * 작성 시각
+     * 대댓글 최초 작성 시각
      */
     private LocalDateTime createdAt;
 
     /**
-     * 수정 시각
+     * 대댓글 최근 수정 시각
      */
     private LocalDateTime updatedAt;
+
+    /**
+     * 현재 사용자가 이 대댓글에 좋아요를 눌렀는지 여부
+     * true: 좋아요 누름 / false: 좋아요 안 누름
+     */
+    private boolean liked;
+
+    /**
+     * 해당 대댓글의 총 좋아요 수
+     */
+    private int likeCount;
+
+    /**
+     * 대댓글 작성자와 1:1 채팅을 시작할 수 있는 URI
+     * 예: /api/chat/start?userId={작성자 ID}
+     */
+    private String chatEntryUrl;
 }

@@ -3,22 +3,22 @@ package com.smartcampus.back.post.service;
 import com.smartcampus.back.post.dto.reply.ReplyCreateRequest;
 import com.smartcampus.back.post.dto.reply.ReplyResponse;
 import com.smartcampus.back.post.dto.reply.ReplyUpdateRequest;
-import com.smartcampus.back.post.entity.Comment;
-import com.smartcampus.back.post.entity.Reply;
-import com.smartcampus.back.post.exception.CommentNotFoundException;
-import com.smartcampus.back.post.exception.ReplyNotFoundException;
+import com.smartcampus.back.post.entity.*;
+import com.smartcampus.back.post.enums.AttachmentTargetType;
+import com.smartcampus.back.post.exception.*;
+import com.smartcampus.back.post.repository.AttachmentRepository;
 import com.smartcampus.back.post.repository.CommentRepository;
 import com.smartcampus.back.post.repository.ReplyRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
-/**
- * 대댓글(Reply) 관련 비즈니스 로직을 처리하는 서비스 클래스입니다.
- * 댓글에 대한 답글 생성, 수정, 삭제, 좋아요, 1:1 채팅 진입 URL 제공 기능을 포함합니다.
- */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -26,14 +26,13 @@ public class ReplyService {
 
     private final CommentRepository commentRepository;
     private final ReplyRepository replyRepository;
-
-    // 추후 연동될 채팅 서비스 인터페이스
-    // private final ChatService chatService;
+    private final AttachmentRepository attachmentRepository;
+    private final FileStorageService fileStorageService;
 
     /**
-     * 댓글에 대한 대댓글(답글)을 생성합니다.
+     * 대댓글 생성
      */
-    public ReplyResponse createReply(Long postId, Long commentId, ReplyCreateRequest request) {
+    public ReplyResponse createReply(Long postId, Long commentId, ReplyCreateRequest request, List<MultipartFile> files) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new CommentNotFoundException("해당 댓글을 찾을 수 없습니다."));
 
@@ -47,52 +46,81 @@ public class ReplyService {
                 .content(request.getContent())
                 .build();
 
-        Reply saved = replyRepository.save(reply);
+        Reply savedReply = replyRepository.save(reply);
 
-        return buildReplyResponse(saved);
+        if (files != null && !files.isEmpty()) {
+            List<Attachment> attachments = files.stream()
+                    .map(file -> fileStorageService.storeFile(file, savedReply.getId(), AttachmentTargetType.REPLY))
+                    .collect(Collectors.toList());
+            attachmentRepository.saveAll(attachments);
+        }
+
+        return buildReplyResponse(savedReply);
     }
 
     /**
-     * 대댓글의 내용을 수정합니다.
+     * 대댓글 수정
      */
-    public ReplyResponse updateReply(Long postId, Long commentId, Long replyId, ReplyUpdateRequest request) {
+    public ReplyResponse updateReply(Long postId, Long commentId, Long replyId, ReplyUpdateRequest request, List<MultipartFile> newFiles) {
         Reply reply = replyRepository.findByIdAndCommentId(replyId, commentId);
-
-        if (reply == null) {
-            throw new ReplyNotFoundException("해당 대댓글이 존재하지 않습니다.");
-        }
+        if (reply == null) throw new ReplyNotFoundException("해당 대댓글이 존재하지 않습니다.");
 
         if (!reply.getComment().getPost().getId().equals(postId)) {
             throw new IllegalArgumentException("해당 대댓글은 지정된 게시글에 속하지 않습니다.");
         }
 
+        if (!reply.getWriterId().equals(request.getWriterId())) {
+            throw new UnauthorizedAccessException("해당 대댓글에 대한 수정 권한이 없습니다.");
+        }
+
         reply.setContent(request.getContent());
         reply.setUpdatedAt(LocalDateTime.now());
-
         Reply updated = replyRepository.save(reply);
+
+        if (newFiles != null && !newFiles.isEmpty()) {
+            List<Attachment> attachments = newFiles.stream()
+                    .map(f -> fileStorageService.storeFile(f, replyId, AttachmentTargetType.REPLY))
+                    .collect(Collectors.toList());
+            attachmentRepository.saveAll(attachments);
+        }
 
         return buildReplyResponse(updated);
     }
 
     /**
-     * 대댓글을 삭제합니다.
+     * 대댓글 삭제
      */
-    public void deleteReply(Long postId, Long commentId, Long replyId) {
+    public void deleteReply(Long postId, Long commentId, Long replyId, Long requesterId) {
         Reply reply = replyRepository.findByIdAndCommentId(replyId, commentId);
-
-        if (reply == null) {
-            throw new ReplyNotFoundException("해당 대댓글이 존재하지 않습니다.");
-        }
+        if (reply == null) throw new ReplyNotFoundException("해당 대댓글이 존재하지 않습니다.");
 
         if (!reply.getComment().getPost().getId().equals(postId)) {
             throw new IllegalArgumentException("해당 대댓글은 지정된 게시글에 속하지 않습니다.");
         }
 
+        if (!reply.getWriterId().equals(requesterId)) {
+            throw new UnauthorizedAccessException("해당 대댓글에 대한 삭제 권한이 없습니다.");
+        }
+
+        // 첨부파일 삭제
+        List<Attachment> attachments = attachmentRepository.findByTargetIdAndTargetType(replyId, AttachmentTargetType.REPLY);
+        attachments.forEach(fileStorageService::deleteFile);
+        attachmentRepository.deleteAll(attachments);
+
         replyRepository.delete(reply);
     }
 
     /**
-     * 대댓글 응답 DTO 생성 + 확장 포인트 포함 (좋아요, 채팅 등)
+     * 첨부파일 다운로드
+     */
+    public Resource loadAttachmentFile(Long replyId, Long fileId) {
+        Attachment file = attachmentRepository.findByIdAndTargetIdAndTargetType(fileId, replyId, AttachmentTargetType.REPLY)
+                .orElseThrow(() -> new FileUploadException("해당 첨부파일을 찾을 수 없습니다."));
+        return fileStorageService.loadFileAsResource(file);
+    }
+
+    /**
+     * 응답 DTO 생성
      */
     private ReplyResponse buildReplyResponse(Reply reply) {
         return ReplyResponse.builder()
@@ -101,9 +129,9 @@ public class ReplyService {
                 .writerId(reply.getWriterId())
                 .createdAt(reply.getCreatedAt())
                 .updatedAt(reply.getUpdatedAt())
-                .liked(false) // 기본값 또는 replyLikeService.isLiked(reply.getId(), userId)
-                .likeCount(0) // replyLikeService.countLikes(reply.getId())
-                .chatEntryUrl("/api/chat/start?userId=" + reply.getWriterId()) // 1:1 채팅 진입 URL 예시
+                .liked(false)
+                .likeCount(0)
+                .chatEntryUrl("/api/chat/start?userId=" + reply.getWriterId())
                 .build();
     }
 }
