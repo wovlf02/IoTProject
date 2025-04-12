@@ -1,18 +1,15 @@
 package com.smartcampus.back.post.service;
 
 import com.smartcampus.back.post.dto.like.LikeResponse;
-import com.smartcampus.back.post.entity.Like;
-import com.smartcampus.back.post.entity.Post;
-import com.smartcampus.back.post.exception.PostNotFoundException;
-import com.smartcampus.back.post.repository.LikeRepository;
-import com.smartcampus.back.post.repository.PostRepository;
+import com.smartcampus.back.post.entity.*;
+import com.smartcampus.back.post.exception.*;
+import com.smartcampus.back.post.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 게시글 좋아요 관련 서비스 클래스
- * 좋아요 생성/취소 및 개수 조회, 사용자 상태 확인 처리
+ * 게시글, 댓글, 대댓글에 대한 좋아요 기능을 처리하는 서비스 클래스
  */
 @Service
 @RequiredArgsConstructor
@@ -21,23 +18,19 @@ public class LikeService {
 
     private final LikeRepository likeRepository;
     private final PostRepository postRepository;
+    private final CommentRepository commentRepository;
+    private final ReplyRepository replyRepository;
 
     /**
-     * 게시글 좋아요 상태를 토글
-     * 사용자가 이미 좋아요 누른 경우 -> 좋아요 취소
-     * 누르지 않은 경우 -> 좋아요 추가
-     *
-     * @param postId 게시글 ID
-     * @param userId 사용자 ID
-     * @return 현재 좋아요 상태 및 총 개수를 포함한 응답
+     * 게시글 좋아요 토글
      */
-    public LikeResponse toggleLike(Long postId, Long userId) {
+    public LikeResponse togglePostLike(Long postId, Long userId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new PostNotFoundException("해당 게시글이 존재하지 않습니다."));
 
         boolean alreadyLiked = likeRepository.existsByUserIdAndPostId(userId, postId);
 
-        if(alreadyLiked) {
+        if (alreadyLiked) {
             likeRepository.deleteByUserIdAndPostId(userId, postId);
         } else {
             Like like = Like.builder()
@@ -52,28 +45,94 @@ public class LikeService {
         return LikeResponse.builder()
                 .liked(!alreadyLiked)
                 .totalLikes((int) totalLikes)
-                .message(alreadyLiked ? "좋아요가 취소되었습니다." : "좋아요를 추가했습니다.")
+                .message(alreadyLiked ? "게시글 좋아요가 취소되었습니다." : "게시글 좋아요가 추가되었습니다.")
                 .build();
     }
 
     /**
-     * 게시글의 총 좋아요 수를 반환
-     *
-     * @param postId 게시글 ID
-     * @return 좋아요 수
+     * 댓글 좋아요 토글
      */
-    public long getLikeCount(Long postId) {
-        return likeRepository.countByPostId(postId);
+    public LikeResponse toggleCommentLike(Long commentId, Long userId) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new CommentNotFoundException("해당 댓글이 존재하지 않습니다."));
+
+        boolean alreadyLiked = likeRepository.existsByUserIdAndCommentId(userId, commentId);
+
+        if (alreadyLiked) {
+            likeRepository.deleteByUserIdAndCommentId(userId, commentId);
+        } else {
+            Like like = Like.builder()
+                    .userId(userId)
+                    .comment(comment)
+                    .build();
+            likeRepository.save(like);
+        }
+
+        long totalLikes = likeRepository.countByCommentId(commentId);
+
+        return LikeResponse.builder()
+                .liked(!alreadyLiked)
+                .totalLikes((int) totalLikes)
+                .message(alreadyLiked ? "댓글 좋아요가 취소되었습니다." : "댓글 좋아요가 추가되었습니다.")
+                .build();
     }
 
     /**
-     * 사용자가 해당 게시글에 좋아요를 눌렀는지 여부 확인
-     *
-     * @param postId 게시글 ID
-     * @param userId 사용자 ID
-     * @return true: 좋아요 눌렀음, false: 안 눌렀음
+     * 대댓글 좋아요 토글
      */
+    public LikeResponse toggleReplyLike(Long replyId, Long userId) {
+        Reply reply = replyRepository.findById(replyId)
+                .orElseThrow(() -> new ReplyNotFoundException("해당 대댓글이 존재하지 않습니다."));
+
+        boolean alreadyLiked = likeRepository.existsByUserIdAndReplyId(userId, replyId);
+
+        if (alreadyLiked) {
+            likeRepository.deleteByUserIdAndReplyId(userId, replyId);
+        } else {
+            Like like = Like.builder()
+                    .userId(userId)
+                    .reply(reply)
+                    .build();
+            likeRepository.save(like);
+        }
+
+        long totalLikes = likeRepository.countByReplyId(replyId);
+
+        return LikeResponse.builder()
+                .liked(!alreadyLiked)
+                .totalLikes((int) totalLikes)
+                .message(alreadyLiked ? "대댓글 좋아요가 취소되었습니다." : "대댓글 좋아요가 추가되었습니다.")
+                .build();
+    }
+
+    // 게시글 좋아요 개수
+    public long getLikeCountByPost(Long postId) {
+        return likeRepository.countByPostId(postId);
+    }
+
+    // 댓글 좋아요 개수
+    public long getLikeCountByComment(Long commentId) {
+        return likeRepository.countByCommentId(commentId);
+    }
+
+    // 대댓글 좋아요 개수
+    public long getLikeCountByReply(Long replyId) {
+        return likeRepository.countByReplyId(replyId);
+    }
+
+    // 게시글 좋아요 여부
     public boolean isPostLiked(Long postId, Long userId) {
         return likeRepository.existsByUserIdAndPostId(userId, postId);
     }
+
+    // 댓글 좋아요 여부
+    public boolean isCommentLiked(Long commentId, Long userId) {
+        return likeRepository.existsByUserIdAndCommentId(userId, commentId);
+    }
+
+    // 대댓글 좋아요 여부
+    public boolean isReplyLiked(Long replyId, Long userId) {
+        return likeRepository.existsByUserIdAndReplyId(userId, replyId);
+    }
+
 }

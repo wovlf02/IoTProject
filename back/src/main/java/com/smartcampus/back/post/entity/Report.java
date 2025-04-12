@@ -1,5 +1,6 @@
 package com.smartcampus.back.post.entity;
 
+import com.smartcampus.back.post.enums.ReportType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -42,9 +43,16 @@ public class Report {
     private Long targetId;
 
     /**
-     * 신고 사유
+     * 신고 유형 (예: SPAM, ABUSE 등)
      */
-    @Column(nullable = false, length = 1000)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private ReportType type;
+
+    /**
+     * 신고 사유 (선택 입력)
+     */
+    @Column(length = 1000)
     private String reason;
 
     /**
@@ -54,7 +62,7 @@ public class Report {
     private LocalDateTime createdAt;
 
     /**
-     * 연결된 게시글 (optional)
+     * 연결된 게시글 (POST 타입일 경우에만 해당)
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")

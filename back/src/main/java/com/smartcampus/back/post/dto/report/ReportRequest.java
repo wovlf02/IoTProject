@@ -1,13 +1,13 @@
 package com.smartcampus.back.post.dto.report;
 
-import jakarta.validation.constraints.NotBlank;
+import com.smartcampus.back.post.enums.ReportType;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
 /**
  * 게시글/댓글/대댓글 신고 요청 DTO
- * 클라이언트가 신고를 요청할 때 사용하는 구조
+ * 사용자가 신고할 때 신고 유형과 선택 사유를 포함
  */
 @Getter
 @Setter
@@ -20,8 +20,13 @@ public class ReportRequest {
     private Long reporterId;
 
     /**
-     * 신고 사유 (자유 텍스트)
+     * 신고 유형 (SPAM, ABUSE, OTHER 등)
      */
-    @NotBlank(message = "신고 사유는 필수입니다.")
+    @NotNull(message = "신고 유형은 필수입니다.")
+    private ReportType type;
+
+    /**
+     * 선택 입력: 신고 상세 사유 (자유 텍스트)
+     */
     private String reason;
 }

@@ -14,6 +14,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = "post") // 순환 참조 방지 (선택)
 public class Attachment {
 
     @Id
@@ -27,25 +28,33 @@ public class Attachment {
     private String fileName;
 
     /**
-     * 저장된 파일 경로
+     * 서버에 저장된 UUID 기반의 파일 이름
+     */
+    @Column(nullable = false)
+    private String storedName;
+
+    /**
+     * 저장된 전체 파일 경로 (로컬 절대경로 또는 S3 경로 등)
      */
     @Column(nullable = false)
     private String filePath;
 
     /**
-     * 파일 사이즈 (byte)
+     * 파일 크기 (바이트)
      */
+    @Column(nullable = false)
     private Long fileSize;
 
     /**
-     * MIME 타입 또는 확장자
+     * 파일 타입 (MIME 또는 확장자)
      */
+    @Column(nullable = false)
     private String fileType;
 
     /**
-     * 연결된 게시글
+     * 이 파일이 속한 게시글
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "post_id")
+    @JoinColumn(name = "post_id", nullable = false)
     private Post post;
 }

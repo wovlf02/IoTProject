@@ -6,10 +6,6 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
-/**
- * 게시글 좋아요 엔티티
- * 사용자가 게시글에 누른 좋아요 정보 저장
- */
 @Entity
 @Table(name = "post_likes")
 @Getter
@@ -20,24 +16,25 @@ import java.time.LocalDateTime;
 @IdClass(LikeId.class)
 public class Like {
 
-    /**
-     * 사용자 ID (복합키)
-     */
     @Id
     @Column(name = "user_id")
     private Long userId;
 
-    /**
-     * 게시글 ID (복합키)
-     */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")
     private Post post;
 
-    /**
-     * 좋아요 누른 시각
-     */
+    @Id
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "comment_id")
+    private Comment comment;
+
+    @Id
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reply_id")
+    private Reply reply;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 }

@@ -1,6 +1,5 @@
 package com.smartcampus.back.post.controller;
 
-import com.smartcampus.back.post.dto.reply.ReplyResponse;
 import com.smartcampus.back.post.dto.report.ReportRequest;
 import com.smartcampus.back.post.dto.report.ReportResponse;
 import com.smartcampus.back.post.service.ReportService;
