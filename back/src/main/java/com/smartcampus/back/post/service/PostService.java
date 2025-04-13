@@ -4,6 +4,7 @@ import com.smartcampus.back.post.dto.attachment.FileDownloadResponse;
 import com.smartcampus.back.post.dto.post.*;
 import com.smartcampus.back.post.entity.Attachment;
 import com.smartcampus.back.post.entity.Post;
+import com.smartcampus.back.post.enums.AttachmentTargetType;
 import com.smartcampus.back.post.exception.FileUploadException;
 import com.smartcampus.back.post.exception.PostNotFoundException;
 import com.smartcampus.back.post.exception.UnauthorizedAccessException;
@@ -22,10 +23,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * 게시글 관련 비즈니스 로직을 처리하는 서비스 클래스
- * 생성, 수정, 삭제, 조회, 검색 및 첨부파일 연동 포함
- */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -35,9 +32,6 @@ public class PostService {
     private final AttachmentRepository attachmentRepository;
     private final FileStorageService fileStorageService;
 
-    /**
-     * 게시글 생성
-     */
     public PostCreateResponse createPost(PostCreateRequest request, List<MultipartFile> files) {
         Post post = Post.builder()
                 .title(request.getTitle())
@@ -51,7 +45,7 @@ public class PostService {
 
         if (files != null && !files.isEmpty()) {
             List<Attachment> attachments = files.stream()
-                    .map(file -> fileStorageService.storeFile(file, savedPost))
+                    .map(file -> fileStorageService.storeFile(file, savedPost.getId(), AttachmentTargetType.POST))
                     .collect(Collectors.toList());
             attachmentRepository.saveAll(attachments);
         }
@@ -62,9 +56,6 @@ public class PostService {
                 .build();
     }
 
-    /**
-     * 게시글 수정 (작성자 검증 포함)
-     */
     public PostUpdateResponse updatePost(Long postId, PostUpdateRequest request, List<MultipartFile> newFiles) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new PostNotFoundException("해당 게시글이 존재하지 않습니다."));
@@ -78,20 +69,19 @@ public class PostService {
         post.setPublic(request.isPublic());
         post.setUpdatedAt(LocalDateTime.now());
 
-        // 첨부파일 삭제
         if (request.getDeleteFiles() != null && !request.getDeleteFiles().isEmpty()) {
             request.getDeleteFiles().forEach(fileId -> {
-                Attachment file = attachmentRepository.findById(fileId)
-                        .orElseThrow(() -> new FileUploadException("삭제할 파일이 존재하지 않습니다."));
+                Attachment file = attachmentRepository.findByIdAndTargetIdAndTargetType(
+                        fileId, postId, AttachmentTargetType.POST
+                ).orElseThrow(() -> new FileUploadException("삭제할 파일이 존재하지 않습니다."));
                 fileStorageService.deleteFile(file);
                 attachmentRepository.delete(file);
             });
         }
 
-        // 새 첨부파일 추가
         if (newFiles != null && !newFiles.isEmpty()) {
             List<Attachment> added = newFiles.stream()
-                    .map(f -> fileStorageService.storeFile(f, post))
+                    .map(f -> fileStorageService.storeFile(f, postId, AttachmentTargetType.POST))
                     .collect(Collectors.toList());
             attachmentRepository.saveAll(added);
         }
@@ -102,9 +92,6 @@ public class PostService {
                 .build();
     }
 
-    /**
-     * 게시글 삭제 (작성자 검증 포함)
-     */
     public PostDeleteResponse deletePost(Long postId, Long requesterId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new PostNotFoundException("삭제할 게시글이 존재하지 않습니다."));
@@ -113,7 +100,7 @@ public class PostService {
             throw new UnauthorizedAccessException("해당 게시글에 대한 삭제 권한이 없습니다.");
         }
 
-        List<Attachment> attachments = attachmentRepository.findByPostId(postId);
+        List<Attachment> attachments = attachmentRepository.findByTargetIdAndTargetType(postId, AttachmentTargetType.POST);
         attachments.forEach(fileStorageService::deleteFile);
         attachmentRepository.deleteAll(attachments);
         postRepository.delete(post);
@@ -124,15 +111,12 @@ public class PostService {
                 .build();
     }
 
-    /**
-     * 게시글 상세 조회 (첨부파일 포함)
-     */
     @Transactional(readOnly = true)
     public PostDetailResponse getPostDetail(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new PostNotFoundException("해당 게시글이 존재하지 않습니다."));
 
-        List<FileDownloadResponse> files = attachmentRepository.findByPostId(postId).stream()
+        List<FileDownloadResponse> files = attachmentRepository.findByTargetIdAndTargetType(postId, AttachmentTargetType.POST).stream()
                 .map(fileStorageService::mapToDownloadResponse)
                 .collect(Collectors.toList());
 
@@ -149,9 +133,6 @@ public class PostService {
                 .build();
     }
 
-    /**
-     * 게시글 목록 조회 (페이징)
-     */
     @Transactional(readOnly = true)
     public List<PostResponse> getPostList(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
@@ -170,12 +151,9 @@ public class PostService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 게시글 검색 (제목 or 내용)
-     */
     @Transactional(readOnly = true)
     public List<PostResponse> searchPosts(String keyword) {
-        Pageable pageable = PageRequest.of(0, 50); // 기본값으로 50개까지 조회
+        Pageable pageable = PageRequest.of(0, 50);
         Page<Post> posts = postRepository.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(keyword, keyword, pageable);
 
         return posts.stream()
@@ -191,18 +169,13 @@ public class PostService {
                 .collect(Collectors.toList());
     }
 
-
-    /**
-     * 첨부파일 단건 다운로드
-     */
     public Resource loadFileAsResource(Long postId, Long fileId) {
-        Attachment attachment = attachmentRepository.findByIdAndPostId(fileId, postId);
+        Attachment attachment = attachmentRepository.findByIdAndTargetIdAndTargetType(
+                fileId, postId, AttachmentTargetType.POST
+        ).orElseThrow(() -> new FileUploadException("해당 첨부파일을 찾을 수 없습니다."));
         return fileStorageService.loadFileAsResource(attachment);
     }
 
-    /**
-     * 첨부파일 삭제 (작성자 검증)
-     */
     public void deleteAttachment(Long postId, Long fileId, Long requesterId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new PostNotFoundException("게시글이 존재하지 않습니다."));
@@ -211,7 +184,9 @@ public class PostService {
             throw new UnauthorizedAccessException("해당 첨부파일을 삭제할 권한이 없습니다.");
         }
 
-        Attachment attachment = attachmentRepository.findByIdAndPostId(fileId, postId);
+        Attachment attachment = attachmentRepository.findByIdAndTargetIdAndTargetType(
+                fileId, postId, AttachmentTargetType.POST
+        ).orElseThrow(() -> new FileUploadException("첨부파일이 존재하지 않습니다."));
         fileStorageService.deleteFile(attachment);
         attachmentRepository.delete(attachment);
     }
