@@ -12,9 +12,7 @@ import com.smartcampus.back.post.repository.AttachmentRepository;
 import com.smartcampus.back.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,6 +21,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * 게시글 생성, 수정, 삭제, 조회, 첨부파일 관리, 검색 등을 처리하는 서비스 클래스
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -32,6 +33,9 @@ public class PostService {
     private final AttachmentRepository attachmentRepository;
     private final FileStorageService fileStorageService;
 
+    /**
+     * 게시글 생성
+     */
     public PostCreateResponse createPost(PostCreateRequest request, List<MultipartFile> files) {
         Post post = Post.builder()
                 .title(request.getTitle())
@@ -56,6 +60,9 @@ public class PostService {
                 .build();
     }
 
+    /**
+     * 게시글 수정
+     */
     public PostUpdateResponse updatePost(Long postId, PostUpdateRequest request, List<MultipartFile> newFiles) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new PostNotFoundException("해당 게시글이 존재하지 않습니다."));
@@ -92,6 +99,9 @@ public class PostService {
                 .build();
     }
 
+    /**
+     * 게시글 삭제
+     */
     public PostDeleteResponse deletePost(Long postId, Long requesterId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new PostNotFoundException("삭제할 게시글이 존재하지 않습니다."));
@@ -111,10 +121,16 @@ public class PostService {
                 .build();
     }
 
-    @Transactional(readOnly = true)
-    public PostDetailResponse getPostDetail(Long postId) {
+    /**
+     * 게시글 상세 조회 + 조회수 증가
+     */
+    @Transactional
+    public PostDetailResponse getPostDetailAndIncreaseView(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new PostNotFoundException("해당 게시글이 존재하지 않습니다."));
+
+        post.setViewCount(post.getViewCount() + 1); // 조회수 증가
+        postRepository.save(post); // 변경 감지 or save 생략 가능 (dirty checking)
 
         List<FileDownloadResponse> files = attachmentRepository.findByTargetIdAndTargetType(postId, AttachmentTargetType.POST).stream()
                 .map(fileStorageService::mapToDownloadResponse)
@@ -133,9 +149,12 @@ public class PostService {
                 .build();
     }
 
+    /**
+     * 게시글 목록 조회 (페이징)
+     */
     @Transactional(readOnly = true)
     public List<PostResponse> getPostList(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Post> result = postRepository.findAll(pageable);
 
         return result.stream()
@@ -151,6 +170,9 @@ public class PostService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 게시글 검색 (제목 또는 내용)
+     */
     @Transactional(readOnly = true)
     public List<PostResponse> searchPosts(String keyword) {
         Pageable pageable = PageRequest.of(0, 50);
@@ -169,6 +191,9 @@ public class PostService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 게시글 첨부파일 다운로드용 파일 로드
+     */
     public Resource loadFileAsResource(Long postId, Long fileId) {
         Attachment attachment = attachmentRepository.findByIdAndTargetIdAndTargetType(
                 fileId, postId, AttachmentTargetType.POST
@@ -176,6 +201,9 @@ public class PostService {
         return fileStorageService.loadFileAsResource(attachment);
     }
 
+    /**
+     * 게시글 첨부파일 삭제 (작성자 검증 포함)
+     */
     public void deleteAttachment(Long postId, Long fileId, Long requesterId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new PostNotFoundException("게시글이 존재하지 않습니다."));
@@ -187,6 +215,7 @@ public class PostService {
         Attachment attachment = attachmentRepository.findByIdAndTargetIdAndTargetType(
                 fileId, postId, AttachmentTargetType.POST
         ).orElseThrow(() -> new FileUploadException("첨부파일이 존재하지 않습니다."));
+
         fileStorageService.deleteFile(attachment);
         attachmentRepository.delete(attachment);
     }

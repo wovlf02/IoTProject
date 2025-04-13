@@ -83,7 +83,7 @@ public class ReportService {
 
     @Transactional(readOnly = true)
     public void checkAlreadyReported(Long targetId, ReportTargetType targetType, Long reporterId) {
-        boolean exists = reportRepository.existsByReporterAndTargetIdAndTargetType(
+        boolean exists = reportRepository.existsByReporterIdAndTargetIdAndTargetType(
                 reporterId, targetId, targetType.name()
         );
         if (exists) {

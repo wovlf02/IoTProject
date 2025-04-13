@@ -23,7 +23,7 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
      * @param targetType 대상 타입 (POST, COMMENT, REPLY)
      * @return 이미 신고한 경우 true
      */
-    boolean existsByReporterAndTargetIdAndTargetType(Long reporterId, Long targetId, String targetType);
+    boolean existsByReporterIdAndTargetIdAndTargetType(Long reporterId, Long targetId, String targetType);
 
     /**
      * 특정 대상에 대한 모든 신고 조회
@@ -41,5 +41,5 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
      */
     @Modifying
     @Transactional
-    void deleteByPost_PostId(Long postId); // 연관 엔티티의 post.id로 안전하게 참조
+    void deleteByPost_PostId(Long postId); // post는 Report의 필드명과 일치해야 함
 }

@@ -72,4 +72,12 @@ public class Attachment {
      */
     @CreationTimestamp
     private LocalDateTime uploadedAt;
+
+    /**
+     * 연관된 게시글 엔티티 (Post)
+     * - Post.attachments 와 양방향 연관관계를 구성
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id", insertable = false, updatable = false)
+    private Post post;
 }

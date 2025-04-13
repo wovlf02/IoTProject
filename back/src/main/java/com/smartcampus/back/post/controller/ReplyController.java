@@ -59,9 +59,10 @@ public class ReplyController {
     public ResponseEntity<String> deleteReply(
             @PathVariable Long postId,
             @PathVariable Long commentId,
-            @PathVariable Long replyId
+            @PathVariable Long replyId,
+            @RequestParam("writerId") Long writerId
     ) {
-        replyService.deleteReply(postId, commentId, replyId);
+        replyService.deleteReply(postId, commentId, replyId, writerId);
         return ResponseEntity.ok("대댓글이 성공적으로 삭제되었습니다.");
     }
 
