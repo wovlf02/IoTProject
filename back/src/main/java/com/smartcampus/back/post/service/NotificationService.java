@@ -13,7 +13,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Firebase Cloud Messaging 기반의 알림 전송 및 알림 로그 저장 서비스
+ * Firebase Cloud Messaging 기반 알림 전송 및
+ * 알림 로그의 생성, 조회, 수정, 삭제를 담당하는 서비스 클래스입니다.
  */
 @Service
 @RequiredArgsConstructor
@@ -22,14 +23,15 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
 
     /**
-     * 단일 사용자에게 FCM 푸시 알림을 전송
+     * FCM을 통해 단일 사용자에게 푸시 알림을 전송합니다.
      *
-     * @param targetToken FCM 디바이스 토큰
+     * @param targetToken 수신자 디바이스의 FCM 토큰
      * @param title       알림 제목
      * @param body        알림 내용
+     * @throws RuntimeException 알림 전송 중 문제가 발생할 경우 예외 발생
      */
     public void sendNotificationToToken(String targetToken, String title, String body) {
-        Notification notification = Notification.builder()
+        com.google.firebase.messaging.Notification notification = com.google.firebase.messaging.Notification.builder()
                 .setTitle(title)
                 .setBody(body)
                 .build();
@@ -42,22 +44,23 @@ public class NotificationService {
 
         try {
             FirebaseMessaging.getInstance().send(message);
-            System.out.println("✅ 알림 전송 성공");
+            System.out.println("✅ FCM 단일 알림 전송 성공");
         } catch (FirebaseMessagingException e) {
-            System.err.println("❌ 알림 전송 실패: " + e.getMessage());
-            throw new RuntimeException("알림 전송 중 오류 발생", e);
+            System.err.println("❌ FCM 단일 알림 전송 실패: " + e.getMessage());
+            throw new RuntimeException("FCM 단일 알림 전송 중 오류 발생", e);
         }
     }
 
     /**
-     * 다중 사용자에게 FCM 푸시 알림을 전송 (최대 500명)
+     * FCM을 통해 최대 500명의 사용자에게 푸시 알림을 전송합니다.
      *
-     * @param tokens 수신자들의 FCM 토큰 목록
+     * @param tokens 수신자의 FCM 토큰 리스트
      * @param title  알림 제목
      * @param body   알림 내용
+     * @throws RuntimeException 알림 전송 중 문제가 발생할 경우 예외 발생
      */
     public void sendNotificationToMultipleTokens(List<String> tokens, String title, String body) {
-        Notification notification = Notification.builder()
+        com.google.firebase.messaging.Notification notification = com.google.firebase.messaging.Notification.builder()
                 .setTitle(title)
                 .setBody(body)
                 .build();
@@ -70,20 +73,20 @@ public class NotificationService {
 
         try {
             BatchResponse response = FirebaseMessaging.getInstance().sendMulticast(message);
-            System.out.printf("✅ 다중 알림 전송 성공 (성공: %d, 실패: %d)%n",
+            System.out.printf("✅ FCM 다중 알림 전송 성공 (성공 %d건 / 실패 %d건)%n",
                     response.getSuccessCount(), response.getFailureCount());
         } catch (FirebaseMessagingException e) {
-            System.err.println("❌ 다중 알림 전송 실패: " + e.getMessage());
-            throw new RuntimeException("다중 알림 전송 중 오류 발생", e);
+            System.err.println("❌ FCM 다중 알림 전송 실패: " + e.getMessage());
+            throw new RuntimeException("FCM 다중 알림 전송 중 오류 발생", e);
         }
     }
 
     /**
-     * 알림 로그 저장
+     * 알림 로그를 데이터베이스에 저장합니다.
      *
-     * @param userId 수신자 ID
+     * @param userId 알림 수신자 ID
      * @param title  알림 제목
-     * @param body   알림 내용
+     * @param body   알림 본문
      */
     public void saveNotificationLog(Long userId, String title, String body) {
         Notification log = Notification.builder()
@@ -97,7 +100,7 @@ public class NotificationService {
     }
 
     /**
-     * 특정 사용자의 전체 알림 목록 조회
+     * 특정 사용자의 알림 목록을 최신순으로 조회합니다.
      *
      * @param userId 사용자 ID
      * @return 알림 응답 DTO 리스트
@@ -116,9 +119,10 @@ public class NotificationService {
     }
 
     /**
-     * 알림 읽음 처리
+     * 특정 알림을 읽음 처리합니다.
      *
      * @param notificationId 알림 ID
+     * @throws NotificationNotFoundException 알림이 존재하지 않을 경우
      */
     public void markAsRead(Long notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
@@ -128,9 +132,10 @@ public class NotificationService {
     }
 
     /**
-     * 알림 삭제
+     * 특정 알림을 삭제합니다.
      *
      * @param notificationId 알림 ID
+     * @throws NotificationNotFoundException 알림이 존재하지 않을 경우
      */
     public void deleteNotification(Long notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
@@ -139,7 +144,7 @@ public class NotificationService {
     }
 
     /**
-     * 특정 사용자의 읽지 않은 알림 수 조회
+     * 읽지 않은 알림의 개수를 반환합니다.
      *
      * @param userId 사용자 ID
      * @return 읽지 않은 알림 수
@@ -149,7 +154,7 @@ public class NotificationService {
     }
 
     /**
-     * 사용자의 모든 알림을 읽음 처리
+     * 해당 사용자의 모든 알림을 읽음 처리합니다.
      *
      * @param userId 사용자 ID
      */
