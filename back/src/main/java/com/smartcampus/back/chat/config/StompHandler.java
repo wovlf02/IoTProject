@@ -1,6 +1,5 @@
 package com.smartcampus.back.chat.config;
 
-import com.smartcampus.back.auth.util.JwtTokenProvider;
 import com.smartcampus.back.common.exception.CustomException;
 import com.smartcampus.back.common.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;

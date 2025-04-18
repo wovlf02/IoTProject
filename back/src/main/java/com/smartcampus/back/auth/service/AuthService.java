@@ -10,7 +10,6 @@ import com.smartcampus.back.auth.dto.response.RegisterResponse;
 import com.smartcampus.back.auth.dto.response.UsernameCheckResponse;
 import com.smartcampus.back.auth.entity.User;
 import com.smartcampus.back.auth.repository.UserRepository;
-import com.smartcampus.back.auth.util.JwtTokenProvider;
 import com.smartcampus.back.auth.util.PasswordEncoderUtil;
 import com.smartcampus.back.common.exception.CustomException;
 import com.smartcampus.back.common.exception.ErrorCode;

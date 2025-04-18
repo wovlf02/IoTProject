@@ -43,7 +43,7 @@ public class AttachmentService {
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
         // 작성자 정보는 게시글에서 조회
-        User uploader = post.getUser();
+        User uploader = post.getWriter();
 
         List<Long> uploadedIds = files.stream()
                 .map(file -> saveAttachment(file, uploader, post, null, null))

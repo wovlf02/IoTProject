@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 /**
  * 채팅 메시지 엔티티
  *
- * 텍스트 또는 파일 메시지를 저장합니다.
+ * 텍스트 메시지와 파일 첨부 메시지를 모두 처리합니다.
  */
 @Entity
 @Getter
@@ -45,20 +45,48 @@ public class ChatMessage {
     private String content;
 
     /**
-     * 전송 시각
+     * 메시지 전송 시각
      */
     @CreationTimestamp
     private LocalDateTime sentAt;
 
     /**
-     * 파일 메시지 여부
+     * 첨부파일 포함 여부
      */
     @Column(nullable = false)
     private boolean hasFile;
 
     /**
-     * 첨부된 파일 정보 (있을 경우)
+     * 첨부된 파일 엔티티
      */
     @OneToOne(mappedBy = "chatMessage", cascade = CascadeType.ALL, orphanRemoval = true)
     private ChatFile chatFile;
+
+    /**
+     * 첨부파일 원본 이름 반환 (없으면 null)
+     */
+    public String getFileName() {
+        return chatFile != null ? chatFile.getOriginalName() : null;
+    }
+
+    /**
+     * 첨부파일 MIME 타입 반환 (없으면 null)
+     */
+    public String getContentType() {
+        return chatFile != null ? chatFile.getContentType() : null;
+    }
+
+    /**
+     * 첨부파일 미리보기 URL 반환 (없으면 null)
+     */
+    public String getPreviewUrl() {
+        return chatFile != null ? "/api/chat/messages/files/" + this.id : null;
+    }
+
+    /**
+     * 첨부파일 다운로드 URL 반환 (없으면 null)
+     */
+    public String getDownloadUrl() {
+        return chatFile != null ? "/api/chat/messages/" + this.id + "/download" : null;
+    }
 }

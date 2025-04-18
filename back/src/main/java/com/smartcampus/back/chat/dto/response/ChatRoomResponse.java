@@ -1,5 +1,6 @@
 package com.smartcampus.back.chat.dto.response;
 
+import com.smartcampus.back.chat.entity.ChatRoom;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
@@ -40,4 +41,23 @@ public class ChatRoomResponse {
 
     @Schema(description = "현재 로그인 사용자의 입장 여부", example = "true")
     private boolean joined;
+
+    /**
+     * ChatRoom 엔티티를 기반으로 응답 DTO 생성
+     *
+     * @param room ChatRoom 엔티티
+     * @return ChatRoomResponse DTO
+     */
+    public static ChatRoomResponse fromEntity(ChatRoom room) {
+        return ChatRoomResponse.builder()
+                .roomId(room.getId())
+                .title(room.getTitle())
+                .roomType(room.getRoomType())
+                .refId(room.getRefId())
+                .createdAt(room.getCreatedAt())
+                .lastMessageAt(room.getLastMessageAt())
+                .participantCount(room.getParticipants() != null ? room.getParticipants().size() : 0)
+                .joined(false) // 기본값 false, 실제 요청자 여부는 컨텍스트에 따라 채워야 함
+                .build();
+    }
 }

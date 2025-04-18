@@ -32,8 +32,12 @@ public enum ErrorCode {
     USER_NOT_FOUND("A005", "사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     DUPLICATE_USERNAME("A006", "이미 존재하는 아이디입니다.", HttpStatus.CONFLICT),
     DUPLICATE_NICKNAME("A007", "이미 사용 중인 닉네임입니다.", HttpStatus.CONFLICT),
+    DUPLICATE_EMAIL("A007", "이미 사용 중인 이메일입니다..", HttpStatus.CONFLICT),
     EMAIL_VERIFICATION_FAILED("A008", "이메일 인증에 실패했습니다.", HttpStatus.BAD_REQUEST),
     EMAIL_CODE_EXPIRED("A009", "인증 코드가 만료되었습니다.", HttpStatus.BAD_REQUEST),
+    INVALID_AUTH_CODE("A010", "인증 코드가 일치하지 않습니다.", HttpStatus.BAD_REQUEST),
+    INVALID_PASSWORD_RESET_REQUEST("A012", "비밀번호 재설정 요청이 유효하지 않습니다.", HttpStatus.BAD_REQUEST),
+
 
     // ✅ 게시글(Post)
     POST_NOT_FOUND("P001", "게시글을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
@@ -44,6 +48,9 @@ public enum ErrorCode {
     COMMENT_NOT_FOUND("CM001", "댓글을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     UNAUTHORIZED_COMMENT_ACCESS("CM002", "댓글에 대한 권한이 없습니다.", HttpStatus.FORBIDDEN),
 
+    // ✅ 대댓글(Reply)
+    REPLY_NOT_FOUND("CM003", "대댓글을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+
     // ✅ 채팅(Chat)
     CHAT_ROOM_NOT_FOUND("CH001", "채팅방을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     CHAT_MESSAGE_NOT_FOUND("CH002", "채팅 메시지를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
@@ -52,6 +59,8 @@ public enum ErrorCode {
     FILE_UPLOAD_FAILED("F001", "파일 업로드에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     FILE_NOT_FOUND("F002", "파일을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     FILE_ACCESS_DENIED("F003", "파일 접근 권한이 없습니다.", HttpStatus.FORBIDDEN),
+    FILE_DELETE_FAILED("F004", "파일 삭제에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),  // ✅ 추가
+    INVALID_FILE_TYPE("F005", "허용되지 않은 파일 형식입니다.", HttpStatus.BAD_REQUEST),
 
     // ✅ 신고(Report)
     REPORT_ALREADY_EXISTS("R001", "이미 신고한 대상입니다.", HttpStatus.CONFLICT),

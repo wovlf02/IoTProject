@@ -42,7 +42,7 @@ public class ChatMessageService {
         ChatMessage message = ChatMessage.builder()
                 .chatRoom(room)
                 .sender(sender)
-                .content(request.getContent())
+                .content(request.getMessage())
                 .hasFile(false)
                 .build();
 

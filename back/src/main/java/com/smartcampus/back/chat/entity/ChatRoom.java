@@ -49,6 +49,11 @@ public class ChatRoom {
     private LocalDateTime createdAt;
 
     /**
+     * 마지막 메시지 전송 시각
+     */
+    private LocalDateTime lastMessageAt;
+
+    /**
      * 메시지 목록 (양방향 설정 시 사용)
      */
     @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.ALL, orphanRemoval = true)

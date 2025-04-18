@@ -1,12 +1,12 @@
 package com.smartcampus.back.auth.service;
 
-import com.google.firebase.ErrorCode;
 import com.smartcampus.back.auth.dto.request.EmailVerificationRequest;
 import com.smartcampus.back.auth.dto.response.EmailVerificationResponse;
 import com.smartcampus.back.auth.dto.response.VerifyEmailResponse;
 import com.smartcampus.back.auth.util.AuthCodeGenerator;
 import com.smartcampus.back.auth.util.EmailUtil;
 import com.smartcampus.back.common.exception.CustomException;
+import com.smartcampus.back.common.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;

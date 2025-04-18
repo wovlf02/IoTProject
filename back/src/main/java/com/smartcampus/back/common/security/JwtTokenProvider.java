@@ -118,4 +118,14 @@ public class JwtTokenProvider {
                 .parseClaimsJws(token)
                 .getBody();
     }
+
+    /**
+     * 토큰에서 사용자 ID 추출 (extractUserId와 동일한 기능)
+     *
+     * @param token JWT 토큰
+     * @return 사용자 ID
+     */
+    public Long getUserIdFromToken(String token) {
+        return extractUserId(token);
+    }
 }

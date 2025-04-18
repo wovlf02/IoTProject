@@ -1,5 +1,7 @@
 package com.smartcampus.back.chat.dto.response;
 
+import com.smartcampus.back.chat.entity.ChatMessage;
+import com.smartcampus.back.chat.entity.ChatRoom;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
@@ -43,4 +45,27 @@ public class ChatRoomListResponse {
 
     @Schema(description = "마지막 메시지가 본인인지 여부", example = "false")
     private boolean isLastMessageMine;
+
+    /**
+     * ChatRoom → ChatRoomListResponse 변환
+     * (기본적인 정보만 포함하며, 사용자별 메시지 관련 정보는 별도 보완 필요)
+     */
+    public static ChatRoomListResponse fromEntity(ChatRoom room) {
+        ChatMessage lastMessage = room.getMessages().stream()
+                .sorted((a, b) -> b.getSentAt().compareTo(a.getSentAt()))
+                .findFirst()
+                .orElse(null);
+
+        return ChatRoomListResponse.builder()
+                .roomId(room.getId())
+                .title(room.getTitle())
+                .roomType(room.getRoomType())
+                .refId(room.getRefId())
+                .lastMessage(lastMessage != null ? lastMessage.getContent() : null)
+                .lastSentAt(lastMessage != null ? lastMessage.getSentAt() : null)
+                .participantCount(room.getParticipants() != null ? room.getParticipants().size() : 0)
+                .unreadCount(0) // 실제 읽지 않은 메시지 수는 사용자 컨텍스트에 따라 설정
+                .isLastMessageMine(false) // 실제 사용자 비교 필요
+                .build();
+    }
 }
