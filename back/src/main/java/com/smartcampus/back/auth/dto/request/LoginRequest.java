@@ -6,22 +6,23 @@ import lombok.Setter;
 
 /**
  * 로그인 요청 DTO
- *
- * 아이디와 비밀번호를 전달받아 인증 처리를 수행
+ * <p>
+ * 사용자 아이디와 비밀번호를 입력받아 로그인 요청을 처리합니다.
+ * </p>
  */
 @Getter
 @Setter
 public class LoginRequest {
 
     /**
-     * 아이디
+     * 로그인할 사용자 아이디 (username)
      */
-    @NotBlank(message = "아이디는 필수입니다.")
+    @NotBlank(message = "아이디는 필수 입력값입니다.")
     private String username;
 
     /**
-     * 비밀번호
+     * 로그인할 비밀번호
      */
-    @NotBlank(message = "비밀번호는 필수입니다.")
+    @NotBlank(message = "비밀번호는 필수 입력값입니다.")
     private String password;
 }

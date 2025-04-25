@@ -1,20 +1,23 @@
 package com.smartcampus.back.auth.service;
 
+import com.smartcampus.back.auth.dto.request.PasswordChangeRequest;
 import com.smartcampus.back.auth.entity.User;
 import com.smartcampus.back.auth.repository.UserRepository;
-import com.smartcampus.back.common.exception.CustomException;
-import com.smartcampus.back.common.exception.ErrorCode;
-import com.smartcampus.back.common.security.CustomUserDetails;
+import com.smartcampus.back.global.exception.CustomException;
+import com.smartcampus.back.global.exception.ErrorCode;
+import com.smartcampus.back.global.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-
 /**
- * 사용자 정보 관련 공통 서비스
+ * 사용자 공통 서비스
+ * <p>
+ * 현재 사용자 조회, ID/username/email/nickname 조회, 닉네임 변경, 비밀번호 변경 기능 제공
+ * </p>
  */
 @Service
 @RequiredArgsConstructor
@@ -22,13 +25,31 @@ import java.util.Optional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    /**
+     * 현재 로그인한 사용자 조회
+     *
+     * @return User 엔티티
+     * @throws CustomException 인증 정보 없음 또는 사용자 조회 실패 시
+     */
+    public User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails)) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED);
+        }
+
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        return userRepository.findById(userDetails.getId())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    }
 
     /**
      * 사용자 ID로 사용자 조회
      *
-     * @param userId 사용자 고유 ID
-     * @return 조회된 사용자
-     * @throws CustomException 사용자 없음 예외
+     * @param userId 조회할 사용자 ID
+     * @return User 엔티티
+     * @throws CustomException 존재하지 않는 사용자일 경우
      */
     public User getUserById(Long userId) {
         return userRepository.findById(userId)
@@ -36,11 +57,10 @@ public class UserService {
     }
 
     /**
-     * 사용자 username 으로 사용자 조회
+     * username(아이디)로 사용자 조회
      *
      * @param username 사용자 아이디
-     * @return 사용자 Entity
-     * @throws CustomException 사용자 없음 예외
+     * @return User 엔티티
      */
     public User getUserByUsername(String username) {
         return userRepository.findByUsername(username)
@@ -48,11 +68,10 @@ public class UserService {
     }
 
     /**
-     * 사용자 이메일로 사용자 조회
+     * 이메일로 사용자 조회
      *
      * @param email 사용자 이메일
-     * @return 사용자 Entity
-     * @throws CustomException 사용자 없음 예외
+     * @return User 엔티티
      */
     public User getUserByEmail(String email) {
         return userRepository.findByEmail(email)
@@ -60,11 +79,10 @@ public class UserService {
     }
 
     /**
-     * 사용자 닉네임으로 사용자 조회
+     * 닉네임으로 사용자 조회
      *
-     * @param nickname 닉네임
-     * @return 사용자 Entity
-     * @throws CustomException 사용자 없음 예외
+     * @param nickname 사용자 닉네임
+     * @return User 엔티티
      */
     public User getUserByNickname(String nickname) {
         return userRepository.findByNickname(nickname)
@@ -72,71 +90,21 @@ public class UserService {
     }
 
     /**
-     * 사용자 프로필 이미지 URL 업데이트
+     * 사용자 비밀번호 변경
      *
-     * @param user 사용자 엔티티
-     * @param newProfileImageUrl 새 이미지 URL
-     * @return 업데이트된 사용자
+     * @param request PasswordChangeRequest (현재 비밀번호, 새 비밀번호)
+     * @throws CustomException 현재 비밀번호가 일치하지 않는 경우
      */
     @Transactional
-    public User updateProfileImage(User user, String newProfileImageUrl) {
-        user.setProfileImage(newProfileImageUrl);
-        return userRepository.save(user);
-    }
+    public void changePassword(PasswordChangeRequest request) {
+        User user = getCurrentUser();
 
-    /**
-     * 비밀번호 변경 처리
-     *
-     * @param user 사용자
-     * @param encodedPassword 인코딩된 새 비밀번호
-     */
-    @Transactional
-    public void updatePassword(User user, String encodedPassword) {
-        user.setPassword(encodedPassword);
-        userRepository.save(user);
-    }
-
-    /**
-     * 사용자가 존재하는지 확인 (by username)
-     */
-    public boolean existsByUsername(String username) {
-        return userRepository.existsByUsername(username);
-    }
-
-    /**
-     * 사용자가 존재하는지 확인 (by email)
-     */
-    public boolean existsByEmail(String email) {
-        return userRepository.existsByEmail(email);
-    }
-
-    /**
-     * 사용자가 존재하는지 확인 (by nickname)
-     */
-    public boolean existsByNickname(String nickname) {
-        return userRepository.existsByNickname(nickname);
-    }
-
-    /**
-     * 현재 로그인한 사용자 조회
-     *
-     * @return 로그인한 사용자 Entity
-     * @throws CustomException 인증 정보 없음 또는 사용자 정보 없음 예외
-     */
-    public User getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new CustomException(ErrorCode.UNAUTHORIZED);
+        // 현재 비밀번호 검증
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new CustomException(ErrorCode.INVALID_PASSWORD);
         }
 
-        Object principal = authentication.getPrincipal();
-
-        if (principal instanceof CustomUserDetails userDetails) {
-            return userRepository.findById(userDetails.getUserId())
-                    .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        }
-
-        throw new CustomException(ErrorCode.UNAUTHORIZED);
+        // 새 비밀번호로 변경
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
     }
 }

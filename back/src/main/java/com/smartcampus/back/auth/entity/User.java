@@ -7,9 +7,9 @@ import java.time.LocalDateTime;
 
 /**
  * 사용자(User) 엔티티
- *
- * 인증 및 사용자 정보 저장을 위한 기본 도메인
- * 회원가입, 로그인, 이메일 인증, 권한 관리 등에 활용
+ * <p>
+ * SmartCampus 앱의 회원가입, 로그인, 커뮤니티 활동 등을 위한 사용자 기본 정보를 관리합니다.
+ * </p>
  */
 @Entity
 @Getter
@@ -17,11 +17,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "users", uniqueConstraints = {
-        @UniqueConstraint(columnNames = "username"),
-        @UniqueConstraint(columnNames = "email"),
-        @UniqueConstraint(columnNames = "nickname")
-})
+@Table(name = "users") // 테이블 이름을 users로 설정
 public class User {
 
     /**
@@ -32,78 +28,94 @@ public class User {
     private Long id;
 
     /**
-     * 로그인용 아이디
+     * 사용자 로그인 아이디 (username)
      */
-    @Column(nullable = false, length = 50)
+    @Column(nullable = false, unique = true, length = 30)
     private String username;
 
     /**
-     * 로그인용 비밀번호 (BCrypt 암호화)
+     * 암호화된 비밀번호
      */
     @Column(nullable = false)
     private String password;
 
     /**
-     * 사용자 이메일
+     * 사용자 닉네임
      */
-    @Column(nullable = false, length = 100)
-    private String email;
-
-    /**
-     * 닉네임
-     */
-    @Column(nullable = false, length = 30)
+    @Column(nullable = false, unique = true, length = 20)
     private String nickname;
 
     /**
-     * 프로필 이미지 URL 또는 경로
+     * 사용자 이메일 주소
      */
-    @Column(length = 255)
-    private String profileImage;
+    @Column(nullable = false, unique = true)
+    private String email;
 
     /**
-     * FCM 토큰 (푸시 알림 전송용)
+     * 프로필 이미지 URL (nullable)
      */
-    @Column(length = 300)
-    private String fcmToken;
+    private String profileImageUrl;
 
     /**
-     * 사용자 권한 (ex. USER, ADMIN)
+     * 계정 상태 (ACTIVE, SUSPENDED, WITHDRAWN)
      */
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    @Builder.Default
-    private String role = "USER";
+    private Status status;
 
     /**
-     * 계정 활성 상태 (탈퇴, 정지 시 false)
+     * 사용자 권한 (USER, ADMIN)
      */
-    @Builder.Default
-    private boolean active = true;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
 
     /**
-     * 회원가입 일시
+     * 가입 일시
      */
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     /**
-     * 최정 수정 일시
+     * 최종 수정 일시
      */
     private LocalDateTime updatedAt;
 
+    // -------------------------------------------------
+
     /**
-     * 등록 시점에 자동으로 생성일을 설정
+     * 최초 저장 시 자동으로 createdAt 설정
      */
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
+        this.status = Status.ACTIVE;
+        this.role = Role.USER;
     }
 
     /**
-     * 업데이트 시점에 자동으로 수정일을 설정
+     * 수정 시 updatedAt 자동 갱신
      */
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    // -------------------------------------------------
+
+    /**
+     * 사용자 계정 상태 ENUM
+     */
+    public enum Status {
+        ACTIVE,      // 정상
+        SUSPENDED,   // 정지
+        WITHDRAWN    // 탈퇴
+    }
+
+    /**
+     * 사용자 권한 ENUM
+     */
+    public enum Role {
+        USER, ADMIN
     }
 }
