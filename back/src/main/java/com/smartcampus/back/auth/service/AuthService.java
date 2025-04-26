@@ -5,23 +5,24 @@ import com.smartcampus.back.auth.dto.response.LoginResponse;
 import com.smartcampus.back.auth.dto.response.TokenResponse;
 import com.smartcampus.back.auth.entity.User;
 import com.smartcampus.back.auth.repository.UserRepository;
+import com.smartcampus.back.auth.util.EmailUtil;
+import com.smartcampus.back.auth.util.PasswordUtil;
 import com.smartcampus.back.global.exception.CustomException;
 import com.smartcampus.back.global.exception.ErrorCode;
-import com.smartcampus.back.global.security.JwtTokenProvider;
-import com.smartcampus.back.global.util.EmailUtil;
-import com.smartcampus.back.global.util.RandomCodeUtil;
+import com.smartcampus.back.auth.security.JwtProvider;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
+import java.util.Optional;
 
 /**
- * 인증 서비스
+ * AuthService
  * <p>
- * 회원가입, 로그인, 이메일 인증, 계정 복구, 토큰 관리 등 인증 전반을 담당합니다.
+ * 회원가입, 로그인, 토큰 재발급, 아이디/비밀번호 복구 등 인증 관련 비즈니스 로직을 처리하는 서비스입니다.
+ * </p>
  */
 @Service
 @RequiredArgsConstructor
@@ -29,61 +30,78 @@ import java.util.concurrent.TimeUnit;
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtTokenProvider jwtTokenProvider;
-    private final StringRedisTemplate redisTemplate;
     private final EmailUtil emailUtil;
+    private final PasswordUtil passwordUtil;
+    private final JwtProvider jwtProvider;
+    private final StringRedisTemplate redisTemplate;
 
-    private static final String EMAIL_CODE_PREFIX = "email:code:";
+    private static final String EMAIL_AUTH_PREFIX = "emailAuth:";
+    private static final long EMAIL_AUTH_EXPIRE_SECONDS = 300; // 5분
+
+    private static final String REFRESH_TOKEN_PREFIX = "refreshToken:";
+
+    // ---------------------- 회원가입: 기본 정보 확인 ----------------------
 
     /**
-     * 아이디 중복 확인
+     * 아이디 중복 여부 확인
      */
     public boolean isUsernameAvailable(String username) {
         return !userRepository.existsByUsername(username);
     }
 
     /**
-     * 닉네임 중복 확인
+     * 닉네임 중복 여부 확인
      */
     public boolean isNicknameAvailable(String nickname) {
         return !userRepository.existsByNickname(nickname);
     }
 
     /**
-     * 이메일 인증코드 전송 (회원가입/아이디 찾기/비번 재설정 공용)
+     * 이메일 인증코드 발송
      */
-    public String sendVerificationCode(String email) {
-        String code = RandomCodeUtil.generate6DigitCode();
-        redisTemplate.opsForValue().set(EMAIL_CODE_PREFIX + email, code, 5, TimeUnit.MINUTES);
-        emailUtil.sendCode(email, code);
-        return "인증코드가 이메일로 전송되었습니다.";
+    public String sendEmailCode(String email) {
+        String code = emailUtil.createAuthCode();
+        emailUtil.sendAuthCode(email, code);
+
+        redisTemplate.opsForValue().set(EMAIL_AUTH_PREFIX + email, code, Duration.ofSeconds(EMAIL_AUTH_EXPIRE_SECONDS));
+        return code;
     }
 
     /**
      * 이메일 인증코드 검증
      */
-    public boolean verifyCode(String email, String code) {
-        String saved = redisTemplate.opsForValue().get(EMAIL_CODE_PREFIX + email);
-        return saved != null && saved.equals(code);
+    public boolean verifyEmailCode(String email, String code) {
+        String savedCode = redisTemplate.opsForValue().get(EMAIL_AUTH_PREFIX + email);
+
+        if (savedCode == null || !savedCode.equals(code)) {
+            throw new CustomException(ErrorCode.INVALID_EMAIL_CODE);
+        }
+
+        redisTemplate.delete(EMAIL_AUTH_PREFIX + email);
+        return true;
     }
 
+    // ---------------------- 회원가입: 최종 등록 ----------------------
+
     /**
-     * 회원가입 최종 등록
+     * 회원가입 최종 제출
      */
-    public void registerUser(RegisterRequest request) {
-        if (userRepository.existsByUsername(request.getUsername()))
+    public void register(RegisterRequest request) {
+        if (userRepository.existsByUsername(request.getUsername())) {
             throw new CustomException(ErrorCode.DUPLICATE_USERNAME);
-        if (userRepository.existsByEmail(request.getEmail()))
-            throw new CustomException(ErrorCode.DUPLICATE_EMAIL);
-        if (userRepository.existsByNickname(request.getNickname()))
+        }
+        if (userRepository.existsByNickname(request.getNickname())) {
             throw new CustomException(ErrorCode.DUPLICATE_NICKNAME);
+        }
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new CustomException(ErrorCode.DUPLICATE_EMAIL);
+        }
 
         User user = User.builder()
                 .username(request.getUsername())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .email(request.getEmail())
+                .password(passwordUtil.encode(request.getPassword()))
                 .nickname(request.getNickname())
+                .email(request.getEmail())
                 .profileImageUrl(request.getProfileImageUrl())
                 .status(User.Status.ACTIVE)
                 .role(User.Role.USER)
@@ -92,101 +110,120 @@ public class AuthService {
         userRepository.save(user);
     }
 
+    // ---------------------- 로그인 / 로그아웃 / 토큰 ----------------------
+
     /**
-     * 로그인 → access & refresh 토큰 발급
+     * 로그인
      */
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        if (!passwordUtil.matches(request.getPassword(), user.getPassword())) {
             throw new CustomException(ErrorCode.INVALID_PASSWORD);
         }
 
-        String accessToken = jwtTokenProvider.generateAccessToken(user);
-        String refreshToken = jwtTokenProvider.generateRefreshToken(user);
+        String accessToken = jwtProvider.generateAccessToken(user);
+        String refreshToken = jwtProvider.generateRefreshToken(user);
 
-        // Redis에 refresh token 저장 (7일 유효)
-        redisTemplate.opsForValue().set("refresh:" + user.getUsername(), refreshToken, 7, TimeUnit.DAYS);
+        redisTemplate.opsForValue().set(REFRESH_TOKEN_PREFIX + user.getId(), refreshToken, Duration.ofDays(14));
 
         return LoginResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .username(user.getUsername())
-                .email(user.getEmail())
                 .nickname(user.getNickname())
+                .email(user.getEmail())
                 .build();
     }
 
     /**
-     * 로그아웃 → Redis에서 refresh 토큰 삭제
+     * 로그아웃
      */
     public void logout(String refreshToken) {
-        String username = jwtTokenProvider.getUsernameFromToken(refreshToken);
-        redisTemplate.delete("refresh:" + username);
+        User user = jwtProvider.getUserFromToken(refreshToken);
+        redisTemplate.delete(REFRESH_TOKEN_PREFIX + user.getId());
     }
 
     /**
-     * accessToken 재발급
+     * 토큰 재발급
      */
-    public TokenResponse reissue(String refreshToken) {
-        if (!jwtTokenProvider.validateToken(refreshToken)) {
-            throw new CustomException(ErrorCode.INVALID_TOKEN);
+    public TokenResponse reissueToken(String refreshToken) {
+        User user = jwtProvider.getUserFromToken(refreshToken);
+
+        String savedRefreshToken = redisTemplate.opsForValue().get(REFRESH_TOKEN_PREFIX + user.getId());
+        if (savedRefreshToken == null || !savedRefreshToken.equals(refreshToken)) {
+            throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
 
-        String username = jwtTokenProvider.getUsernameFromToken(refreshToken);
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-
-        String saved = redisTemplate.opsForValue().get("refresh:" + username);
-        if (!refreshToken.equals(saved)) {
-            throw new CustomException(ErrorCode.INVALID_TOKEN);
-        }
-
-        String newAccessToken = jwtTokenProvider.generateAccessToken(user);
+        String newAccessToken = jwtProvider.generateAccessToken(user);
         return TokenResponse.builder()
                 .accessToken(newAccessToken)
                 .build();
     }
 
+    // ---------------------- 계정/비밀번호 복구 ----------------------
+
     /**
-     * 아이디 찾기 - 이메일로 인증코드 발송
+     * [아이디 찾기] 인증코드 발송
      */
-    public String sendCodeToFindUsername(String email) {
-        userRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        return sendVerificationCode(email);
+    public String sendFindUsernameCode(String email) {
+        Optional<User> user = userRepository.findByEmail(email);
+        if (user.isEmpty()) {
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        String code = emailUtil.createAuthCode();
+        emailUtil.sendAuthCode(email, code);
+
+        redisTemplate.opsForValue().set(EMAIL_AUTH_PREFIX + email, code, Duration.ofSeconds(EMAIL_AUTH_EXPIRE_SECONDS));
+        return code;
     }
 
     /**
-     * 아이디 찾기 - 인증코드 검증 후 아이디 반환
+     * [아이디 찾기] 인증코드 검증 및 아이디 반환
      */
-    public String verifyAndFindUsername(EmailVerifyRequest request) {
-        if (!verifyCode(request.getEmail(), request.getCode())) {
-            throw new CustomException(ErrorCode.INVALID_VERIFICATION_CODE);
-        }
+    public String verifyFindUsernameCode(String email, String code) {
+        verifyEmailCode(email, code);
 
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         return user.getUsername();
     }
 
     /**
-     * 비밀번호 재설정 코드 발송
+     * [비밀번호 재설정] 본인확인 인증코드 발송
      */
-    public String sendCodeToResetPassword(PasswordResetRequest request) {
-        userRepository.findByUsernameAndEmail(request.getUsername(), request.getEmail())
+    public String sendPasswordResetCode(String username, String email) {
+        User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        return sendVerificationCode(request.getEmail());
+
+        if (!user.getEmail().equals(email)) {
+            throw new CustomException(ErrorCode.EMAIL_NOT_MATCH);
+        }
+
+        String code = emailUtil.createAuthCode();
+        emailUtil.sendAuthCode(email, code);
+
+        redisTemplate.opsForValue().set(EMAIL_AUTH_PREFIX + email, code, Duration.ofSeconds(EMAIL_AUTH_EXPIRE_SECONDS));
+        return code;
     }
 
     /**
-     * 비밀번호 재설정 - 새 비밀번호 저장
+     * [비밀번호 재설정] 인증코드 검증
+     */
+    public boolean verifyPasswordResetCode(String email, String code) {
+        return verifyEmailCode(email, code);
+    }
+
+    /**
+     * [비밀번호 재설정] 새 비밀번호 저장
      */
     public void updatePassword(String username, String newPassword) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        user.setPassword(passwordEncoder.encode(newPassword));
+
+        user.setPassword(passwordUtil.encode(newPassword));
     }
 }

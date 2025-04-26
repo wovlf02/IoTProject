@@ -6,9 +6,9 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 /**
- * 사용자(User) 엔티티
+ * User
  * <p>
- * SmartCampus 앱의 회원가입, 로그인, 커뮤니티 활동 등을 위한 사용자 기본 정보를 관리합니다.
+ * SmartCampus 앱의 회원, 인증, 커뮤니티 활동 등을 위한 사용자 기본 정보를 관리하는 엔티티입니다.
  * </p>
  */
 @Entity
@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "users") // 테이블 이름을 users로 설정
+@Table(name = "users") // DB 테이블 이름을 users로 지정
 public class User {
 
     /**
@@ -57,6 +57,11 @@ public class User {
     private String profileImageUrl;
 
     /**
+     * FCM 디바이스 토큰 (nullable)
+     */
+    private String fcmToken;
+
+    /**
      * 계정 상태 (ACTIVE, SUSPENDED, WITHDRAWN)
      */
     @Enumerated(EnumType.STRING)
@@ -82,15 +87,58 @@ public class User {
     private LocalDateTime updatedAt;
 
     // -------------------------------------------------
+    // 🔥 추가: 알림 설정 관련 필드 6개
 
     /**
-     * 최초 저장 시 자동으로 createdAt 설정
+     * 댓글 알림 수신 여부
+     */
+    @Column(nullable = false)
+    private Boolean commentNotificationEnabled = true;
+
+    /**
+     * 대댓글 알림 수신 여부
+     */
+    @Column(nullable = false)
+    private Boolean replyNotificationEnabled = true;
+
+    /**
+     * 친구 요청/수락 알림 수신 여부
+     */
+    @Column(nullable = false)
+    private Boolean friendNotificationEnabled = true;
+
+    /**
+     * 채팅 메시지 수신 알림 수신 여부
+     */
+    @Column(nullable = false)
+    private Boolean chatNotificationEnabled = true;
+
+    /**
+     * 다음 수업 시작 알림 수신 여부
+     */
+    @Column(nullable = false)
+    private Boolean nextClassNotificationEnabled = true;
+
+    /**
+     * 지각 경고 알림 수신 여부
+     */
+    @Column(nullable = false)
+    private Boolean lateWarningNotificationEnabled = true;
+
+    // -------------------------------------------------
+
+    /**
+     * 최초 저장 시 createdAt, status, role 기본값 설정
      */
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
-        this.status = Status.ACTIVE;
-        this.role = Role.USER;
+        if (this.status == null) {
+            this.status = Status.ACTIVE;
+        }
+        if (this.role == null) {
+            this.role = Role.USER;
+        }
     }
 
     /**

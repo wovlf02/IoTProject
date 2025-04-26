@@ -3,28 +3,29 @@ package com.smartcampus.back.auth.dto.request;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
 
 /**
- * 이메일 인증 코드 검증 요청 DTO
+ * EmailVerifyRequest
  * <p>
- * 사용자가 이메일로 받은 인증 코드를 입력해 서버에 검증 요청할 때 사용됩니다.
+ * 이메일 인증코드를 검증할 때 사용하는 요청 DTO입니다.
+ * (ex. 회원가입 인증, 아이디 찾기 인증, 비밀번호 재설정 인증 등)
  * </p>
  */
 @Getter
-@Setter
+@NoArgsConstructor
 public class EmailVerifyRequest {
 
     /**
      * 인증할 이메일 주소
      */
-    @NotBlank(message = "이메일은 필수 입력값입니다.")
-    @Email(message = "유효한 이메일 형식이어야 합니다.")
+    @NotBlank(message = "이메일을 입력해 주세요.")
+    @Email(message = "올바른 이메일 형식이어야 합니다.")
     private String email;
 
     /**
-     * 인증 코드 (6자리 숫자)
+     * 입력한 인증 코드
      */
-    @NotBlank(message = "인증 코드는 필수 입력값입니다.")
+    @NotBlank(message = "인증코드를 입력해 주세요.")
     private String code;
 }

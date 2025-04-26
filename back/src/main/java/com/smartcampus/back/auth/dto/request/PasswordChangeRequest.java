@@ -1,30 +1,29 @@
 package com.smartcampus.back.auth.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.Getter;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
 
 /**
- * 비밀번호 변경 요청 DTO
+ * PasswordChangeRequest
  * <p>
- * 로그인한 사용자가 현재 비밀번호를 검증 후, 새 비밀번호로 변경할 때 사용됩니다.
+ * 비밀번호 변경 요청 시 사용하는 DTO입니다.
+ * (현재 비밀번호를 요구하지 않고 새 비밀번호만 입력받습니다.)
  * </p>
  */
 @Getter
-@Setter
+@NoArgsConstructor
 public class PasswordChangeRequest {
 
     /**
-     * 현재 비밀번호
+     * 아이디
      */
-    @NotBlank(message = "현재 비밀번호는 필수 입력값입니다.")
-    private String currentPassword;
+    @NotBlank(message = "아이디를 입력해 주세요")
+    private String username;
 
     /**
      * 새 비밀번호
      */
-    @NotBlank(message = "새 비밀번호는 필수 입력값입니다.")
-    @Size(min = 8, message = "비밀번호는 최소 8자 이상이어야 합니다.")
+    @NotBlank(message = "새 비밀번호를 입력해 주세요.")
     private String newPassword;
 }

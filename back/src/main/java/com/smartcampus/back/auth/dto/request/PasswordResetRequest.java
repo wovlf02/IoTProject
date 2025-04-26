@@ -3,28 +3,29 @@ package com.smartcampus.back.auth.dto.request;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
 
 /**
- * 비밀번호 재설정 요청 DTO
+ * PasswordResetRequest
  * <p>
- * 아이디와 이메일을 입력받아 비밀번호 재설정을 위한 본인 확인을 수행합니다.
+ * 비밀번호 재설정(초기화) 요청 시 사용하는 DTO입니다.
+ * (아이디 + 이메일을 함께 입력받아 본인 인증을 수행합니다.)
  * </p>
  */
 @Getter
-@Setter
+@NoArgsConstructor
 public class PasswordResetRequest {
 
     /**
-     * 본인 확인용 아이디
+     * 사용자 로그인 아이디 (username)
      */
-    @NotBlank(message = "아이디는 필수 입력값입니다.")
+    @NotBlank(message = "아이디를 입력해 주세요.")
     private String username;
 
     /**
-     * 본인 확인용 이메일
+     * 사용자 이메일 주소
      */
-    @NotBlank(message = "이메일은 필수 입력값입니다.")
-    @Email(message = "유효한 이메일 형식이어야 합니다.")
+    @NotBlank(message = "이메일을 입력해 주세요.")
+    @Email(message = "올바른 이메일 형식이어야 합니다.")
     private String email;
 }

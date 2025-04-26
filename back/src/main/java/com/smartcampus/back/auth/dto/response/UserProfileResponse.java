@@ -5,9 +5,10 @@ import lombok.Builder;
 import lombok.Getter;
 
 /**
- * 사용자 프로필 응답 DTO
+ * UserProfileResponse
  * <p>
- * 로그인된 사용자 또는 검색된 사용자의 정보를 응답할 때 사용됩니다.
+ * 사용자 프로필 조회 시 반환하는 응답 DTO입니다.
+ * username, nickname, email, profileImageUrl 정보를 제공합니다.
  * </p>
  */
 @Getter
@@ -15,35 +16,30 @@ import lombok.Getter;
 public class UserProfileResponse {
 
     /**
-     * 사용자 아이디 (username)
+     * 사용자 로그인 아이디
      */
-    private String username;
+    private final String username;
 
     /**
      * 사용자 닉네임
      */
-    private String nickname;
+    private final String nickname;
 
     /**
-     * 사용자 이메일
+     * 사용자 이메일 주소
      */
-    private String email;
+    private final String email;
 
     /**
-     * 프로필 이미지 URL (nullable)
+     * 프로필 이미지 URL
      */
-    private String profileImageUrl;
+    private final String profileImageUrl;
 
     /**
-     * 계정 상태 (ACTIVE, SUSPENDED, WITHDRAWN 등)
-     */
-    private String status;
-
-    /**
-     * User 엔티티로부터 DTO 변환
+     * User 엔티티를 UserProfileResponse로 변환하는 메서드
      *
      * @param user User 엔티티
-     * @return UserProfileResponse DTO
+     * @return 변환된 UserProfileResponse
      */
     public static UserProfileResponse fromEntity(User user) {
         return UserProfileResponse.builder()
@@ -51,7 +47,6 @@ public class UserProfileResponse {
                 .nickname(user.getNickname())
                 .email(user.getEmail())
                 .profileImageUrl(user.getProfileImageUrl())
-                .status(user.getStatus().name())
                 .build();
     }
 }

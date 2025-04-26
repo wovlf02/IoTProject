@@ -3,7 +3,7 @@ package com.smartcampus.back.admin.controller;
 import com.smartcampus.back.admin.dto.request.UserResolveRequest;
 import com.smartcampus.back.admin.dto.response.ReportListResponse;
 import com.smartcampus.back.admin.service.AdminReportService;
-import com.smartcampus.back.global.dto.ApiResponse;
+import com.smartcampus.back.global.dto.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;

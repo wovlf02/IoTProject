@@ -7,69 +7,60 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 /**
- * 사용자(User) 엔티티 전용 Repository
+ * UserRepository
  * <p>
- * 로그인, 회원가입, 계정 복구, 사용자 상태 관리 기능을 지원합니다.
+ * User 엔티티에 대한 데이터베이스 접근을 담당하는 JpaRepository 인터페이스입니다.
+ * username, email, nickname 등을 기준으로 사용자 조회 기능을 제공합니다.
  * </p>
  */
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
     /**
-     * 아이디(username)로 사용자 조회
+     * username으로 사용자 조회
      *
-     * @param username 아이디
-     * @return 사용자 Optional
+     * @param username 로그인 ID
+     * @return Optional<User>
      */
     Optional<User> findByUsername(String username);
 
     /**
-     * 이메일로 사용자 조회
+     * nickname으로 사용자 조회
      *
-     * @param email 이메일 주소
-     * @return 사용자 Optional
-     */
-    Optional<User> findByEmail(String email);
-
-    /**
-     * 닉네임으로 사용자 조회
-     *
-     * @param nickname 닉네임
-     * @return 사용자 Optional
+     * @param nickname 사용자 닉네임
+     * @return Optional<User>
      */
     Optional<User> findByNickname(String nickname);
 
     /**
-     * username과 email을 동시에 만족하는 사용자 조회
-     * (비밀번호 재설정 본인확인용)
+     * email로 사용자 조회
      *
-     * @param username 아이디
-     * @param email 이메일 주소
-     * @return 사용자 Optional
+     * @param email 사용자 이메일
+     * @return Optional<User>
      */
-    Optional<User> findByUsernameAndEmail(String username, String email);
+    Optional<User> findByEmail(String email);
 
     /**
-     * 해당 username이 존재하는지 여부
+     * username 중복 여부 체크
      *
-     * @param username 아이디
-     * @return 존재 여부 (true/false)
+     * @param username 로그인 ID
+     * @return true = 이미 존재
      */
     boolean existsByUsername(String username);
 
     /**
-     * 해당 이메일이 존재하는지 여부
+     * nickname 중복 여부 체크
      *
-     * @param email 이메일
-     * @return 존재 여부 (true/false)
-     */
-    boolean existsByEmail(String email);
-
-    /**
-     * 해당 닉네임이 존재하는지 여부
-     *
-     * @param nickname 닉네임
-     * @return 존재 여부 (true/false)
+     * @param nickname 사용자 닉네임
+     * @return true = 이미 존재
      */
     boolean existsByNickname(String nickname);
+
+    /**
+     * email 중복 여부 체크
+     *
+     * @param email 사용자 이메일
+     * @return true = 이미 존재
+     */
+    boolean existsByEmail(String email);
 }

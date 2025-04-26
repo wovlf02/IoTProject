@@ -1,6 +1,8 @@
 package com.smartcampus.back.community.entity;
 
 import com.smartcampus.back.auth.entity.User;
+import com.smartcampus.back.community.entity.enums.ReportStatus;
+import com.smartcampus.back.community.entity.enums.ReportType;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;

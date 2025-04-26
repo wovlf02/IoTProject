@@ -4,9 +4,10 @@ import lombok.Builder;
 import lombok.Getter;
 
 /**
- * 로그인 응답 DTO
+ * LoginResponse
  * <p>
- * 로그인 성공 시 클라이언트에 전달할 사용자 인증/프로필 정보와 JWT 토큰 정보를 담습니다.
+ * 로그인 성공 시 클라이언트에게 반환하는 응답 DTO입니다.
+ * AccessToken, RefreshToken, 사용자 기본 정보를 포함합니다.
  * </p>
  */
 @Getter
@@ -14,27 +15,27 @@ import lombok.Getter;
 public class LoginResponse {
 
     /**
-     * Access Token (JWT, 인증용)
+     * Access Token (JWT)
      */
-    private String accessToken;
+    private final String accessToken;
 
     /**
-     * Refresh Token (재발급용)
+     * Refresh Token (JWT)
      */
-    private String refreshToken;
+    private final String refreshToken;
 
     /**
-     * 사용자 아이디 (username)
+     * 로그인한 사용자 아이디 (username)
      */
-    private String username;
+    private final String username;
 
     /**
-     * 사용자 이메일
+     * 로그인한 사용자 닉네임
      */
-    private String email;
+    private final String nickname;
 
     /**
-     * 사용자 닉네임
+     * 로그인한 사용자 이메일
      */
-    private String nickname;
+    private final String email;
 }
