@@ -1,41 +1,34 @@
 package com.smartcampus.back.global.util;
 
-import com.smartcampus.back.auth.entity.User;
-import com.smartcampus.back.global.exception.CustomException;
-import com.smartcampus.back.global.exception.ErrorCode;
-import com.smartcampus.back.global.security.CustomUserDetails;
+import com.smartcampus.back.global.exception.UnauthorizedException;
+import com.smartcampus.back.security.CustomUserDetails;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
 
 /**
- * SecurityUtil
- * <p>
- * Spring Security Context에서 현재 로그인한 사용자의 User 객체를 가져오는 유틸리티 클래스입니다.
- * </p>
+ * Spring Security에서 인증된 사용자 정보를 가져오는 유틸 클래스입니다.
  */
-@Component
 public class SecurityUtil {
 
     /**
-     * 현재 로그인한 사용자의 User 객체를 반환합니다.
+     * 현재 인증된 사용자의 ID를 반환합니다.
      *
-     * @return 현재 로그인된 User
-     * @throws CustomException 인증 정보가 없거나 잘못된 경우
+     * @return 사용자 ID
+     * @throws UnauthorizedException 인증 정보가 없을 경우
      */
-    public static User getCurrentUser() {
+    public static Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()) {
-            throw new CustomException(ErrorCode.UNAUTHORIZED);
+            throw new UnauthorizedException("인증된 사용자가 없습니다.");
         }
 
         Object principal = authentication.getPrincipal();
 
         if (principal instanceof CustomUserDetails userDetails) {
-            return userDetails.getUser();
-        } else {
-            throw new CustomException(ErrorCode.UNAUTHORIZED);
+            return userDetails.getId(); // 사용자 정의 UserDetails에서 ID 추출
         }
+
+        throw new UnauthorizedException("사용자 인증 정보를 확인할 수 없습니다.");
     }
 }
