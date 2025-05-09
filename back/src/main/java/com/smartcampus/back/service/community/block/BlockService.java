@@ -5,7 +5,6 @@ import com.smartcampus.back.dto.community.block.response.BlockedPostListResponse
 import com.smartcampus.back.dto.community.block.response.BlockedReplyListResponse;
 import com.smartcampus.back.dto.community.block.response.BlockedTargetResponse;
 import com.smartcampus.back.entity.auth.User;
-import com.hamcam.back.entity.community.*;
 import com.smartcampus.back.entity.community.Block;
 import com.smartcampus.back.entity.community.Comment;
 import com.smartcampus.back.entity.community.Post;

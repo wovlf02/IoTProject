@@ -1,7 +1,6 @@
 package com.smartcampus.back.repository.community.report;
 
 import com.smartcampus.back.entity.auth.User;
-import com.hamcam.back.entity.community.*;
 import com.smartcampus.back.entity.community.Comment;
 import com.smartcampus.back.entity.community.Post;
 import com.smartcampus.back.entity.community.Reply;

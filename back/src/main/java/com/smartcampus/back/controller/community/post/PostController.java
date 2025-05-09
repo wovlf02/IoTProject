@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartcampus.back.dto.community.post.request.PostCreateRequest;
 import com.smartcampus.back.dto.community.post.request.PostUpdateRequest;
 import com.smartcampus.back.dto.community.post.request.ProblemReferenceRequest;
-import com.hamcam.back.dto.community.post.response.*;
 import com.smartcampus.back.dto.community.post.response.*;
 import com.smartcampus.back.global.exception.CustomException;
 import com.smartcampus.back.service.community.post.PostService;

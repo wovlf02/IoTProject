@@ -2,7 +2,6 @@ package com.smartcampus.back.service.auth;
 
 import com.smartcampus.back.dto.auth.request.*;
 import com.smartcampus.back.entity.auth.User;
-import com.hamcam.back.dto.auth.request.*;
 import com.smartcampus.back.dto.auth.response.LoginResponse;
 import com.smartcampus.back.dto.auth.response.TokenResponse;
 import com.smartcampus.back.global.exception.CustomException;

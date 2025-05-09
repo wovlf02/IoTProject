@@ -3,7 +3,6 @@ package com.smartcampus.back.service.community.like;
 import com.smartcampus.back.dto.community.like.response.LikeCountResponse;
 import com.smartcampus.back.dto.community.like.response.LikeStatusResponse;
 import com.smartcampus.back.entity.auth.User;
-import com.hamcam.back.entity.community.*;
 import com.smartcampus.back.entity.community.Comment;
 import com.smartcampus.back.entity.community.Like;
 import com.smartcampus.back.entity.community.Post;

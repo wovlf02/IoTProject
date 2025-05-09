@@ -1,7 +1,5 @@
 package com.smartcampus.back.service.community.post;
 
-import com.hamcam.back.dto.community.post.request.*;
-import com.hamcam.back.dto.community.post.response.*;
 import com.smartcampus.back.dto.community.post.request.PostCreateRequest;
 import com.smartcampus.back.dto.community.post.request.PostUpdateRequest;
 import com.smartcampus.back.dto.community.post.request.ProblemReferenceRequest;

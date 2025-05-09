@@ -6,7 +6,6 @@ import com.smartcampus.back.dto.community.comment.response.CommentListResponse;
 import com.smartcampus.back.dto.community.comment.response.CommentResponse;
 import com.smartcampus.back.dto.community.reply.request.ReplyCreateRequest;
 import com.smartcampus.back.entity.auth.User;
-import com.hamcam.back.entity.community.*;
 import com.smartcampus.back.entity.community.*;
 import com.smartcampus.back.repository.community.attachment.AttachmentRepository;
 import com.smartcampus.back.repository.community.block.BlockRepository;

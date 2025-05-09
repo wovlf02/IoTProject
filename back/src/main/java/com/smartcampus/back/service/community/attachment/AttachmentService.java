@@ -2,7 +2,6 @@ package com.smartcampus.back.service.community.attachment;
 
 import com.smartcampus.back.dto.community.attachment.response.AttachmentListResponse;
 import com.smartcampus.back.dto.community.attachment.response.AttachmentResponse;
-import com.hamcam.back.entity.community.*;
 import com.smartcampus.back.entity.community.Attachment;
 import com.smartcampus.back.entity.community.Comment;
 import com.smartcampus.back.entity.community.Post;

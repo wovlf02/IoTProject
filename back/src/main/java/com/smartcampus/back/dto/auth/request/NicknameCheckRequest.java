@@ -6,24 +6,15 @@ import lombok.NoArgsConstructor;
 
 /**
  * 닉네임 중복 확인 요청 DTO입니다.
- * 사용자가 입력한 닉네임이 사용 가능한지 확인합니다.
+ * 회원가입 시 입력된 닉네임의 중복 여부를 확인합니다.
  */
 @Getter
 @NoArgsConstructor
 public class NicknameCheckRequest {
 
     /**
-     * 중복 확인할 닉네임
+     * 중복 확인할 사용자 닉네임
      */
-    @NotBlank(message = "닉네임은 필수입니다.")
+    @NotBlank(message = "닉네임은 필수 입력 값입니다.")
     private String nickname;
-
-    /**
-     * 생성자
-     *
-     * @param nickname 확인할 닉네임
-     */
-    public NicknameCheckRequest(String nickname) {
-        this.nickname = nickname;
-    }
 }

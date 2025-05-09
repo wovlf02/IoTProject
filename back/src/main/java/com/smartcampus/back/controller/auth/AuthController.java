@@ -2,7 +2,6 @@ package com.smartcampus.back.controller.auth;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hamcam.back.dto.auth.request.*;
 import com.smartcampus.back.dto.auth.request.*;
 import com.smartcampus.back.dto.auth.response.LoginResponse;
 import com.smartcampus.back.dto.auth.response.TokenResponse;

@@ -1,69 +1,51 @@
 package com.smartcampus.back.service.chat;
 
-import com.smartcampus.back.dto.chat.request.ChatMessageSendRequest;
+import com.smartcampus.back.entity.chat.ChatMessage;
+import com.smartcampus.back.entity.chat.ChatRoom;
+import com.smartcampus.back.entity.auth.User;
+import com.smartcampus.back.dto.chat.request.ChatMessageRequest;
 import com.smartcampus.back.dto.chat.response.ChatMessageResponse;
-import com.smartcampus.back.entity.ChatMessage;
-import com.smartcampus.back.entity.ChatMessageRead;
-import com.smartcampus.back.entity.ChatRoom;
-import com.smartcampus.back.entity.User;
-import com.smartcampus.back.global.exception.NotFoundException;
-import com.smartcampus.back.repository.ChatMessageReadRepository;
-import com.smartcampus.back.repository.ChatMessageRepository;
-import com.smartcampus.back.repository.ChatRoomRepository;
-import com.smartcampus.back.repository.UserRepository;
-import jakarta.transaction.Transactional;
+import com.smartcampus.back.repository.chat.ChatMessageRepository;
+import com.smartcampus.back.repository.chat.ChatRoomRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
-/**
- * WebSocket을 통해 수신된 채팅 메시지를 처리하고
- * DB에 저장 및 응답을 구성하는 서비스 클래스입니다.
- */
 @Service
 @RequiredArgsConstructor
 public class WebSocketChatService {
 
-    private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
-    private final ChatMessageReadRepository chatMessageReadRepository;
-    private final UserRepository userRepository;
+    private final ChatRoomRepository chatRoomRepository;
 
     /**
-     * 클라이언트로부터 받은 채팅 메시지를 처리합니다.
+     * 텍스트 메시지를 저장하고 응답으로 반환합니다.
      *
-     * @param request  메시지 전송 요청 DTO
-     * @param senderId 메시지를 보낸 사용자 ID (JWT에서 추출)
-     * @return 저장된 메시지를 기반으로 생성된 응답 DTO
+     * @param request 클라이언트에서 수신한 메시지
+     * @return 저장된 메시지 응답
      */
-    @Transactional
-    public ChatMessageResponse handleMessage(ChatMessageSendRequest request, Long senderId) {
-        ChatRoom chatRoom = chatRoomRepository.findById(request.getRoomId())
-                .orElseThrow(() -> new NotFoundException("채팅방을 찾을 수 없습니다."));
+    public ChatMessageResponse saveTextMessage(ChatMessageRequest request) {
+        ChatRoom room = chatRoomRepository.findById(request.getRoomId())
+                .orElseThrow(() -> new IllegalArgumentException("채팅방이 존재하지 않습니다."));
 
-        User sender = userRepository.findById(senderId)
-                .orElseThrow(() -> new NotFoundException("사용자를 찾을 수 없습니다."));
-
-        // 메시지 생성 및 저장
         ChatMessage message = ChatMessage.builder()
-                .chatRoom(chatRoom)
-                .sender(sender)
-                .message(request.getMessage())
+                .chatRoom(room)
+                .sender(User.builder().id(request.getSenderId()).build())
                 .type(request.getType())
-                .fileUrl(request.getFileUrl())
+                .content(request.getContent())
                 .sentAt(LocalDateTime.now())
                 .build();
+
         chatMessageRepository.save(message);
 
-        // 읽음 상태 저장 (자기 자신은 읽음 처리)
-        ChatMessageRead read = ChatMessageRead.builder()
-                .chatMessage(message)
-                .user(sender)
-                .readAt(LocalDateTime.now())
+        return ChatMessageResponse.builder()
+                .messageId(message.getId())
+                .roomId(room.getId())
+                .senderId(message.getSender().getId())
+                .content(message.getContent())
+                .type(message.getType())
+                .sentAt(message.getSentAt())
                 .build();
-        chatMessageReadRepository.save(read);
-
-        return ChatMessageResponse.from(message, true);
     }
 }
