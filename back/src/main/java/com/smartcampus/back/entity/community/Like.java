@@ -15,7 +15,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 @Table(
-        name = "LIKE",
+        name = "LIKES",
         uniqueConstraints = {
                 @UniqueConstraint(name = "UK_LIKE_USER_POST", columnNames = {"USER_ID", "POST_ID"}),
                 @UniqueConstraint(name = "UK_LIKE_USER_COMMENT", columnNames = {"USER_ID", "COMMENT_ID"}),

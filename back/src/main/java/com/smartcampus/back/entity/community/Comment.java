@@ -19,7 +19,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "COMMENT")
+@Table(name = "COMMENTS")
 public class Comment {
 
     @Id

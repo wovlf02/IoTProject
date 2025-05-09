@@ -11,7 +11,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 @Table(
-        name = "BLOCK",
+        name = "BLOCKS",
         uniqueConstraints = @UniqueConstraint(
                 name = "UK_BLOCK_USER_POST_COMMENT_REPLY",
                 columnNames = {"USER_ID", "POST_ID", "COMMENT_ID", "REPLY_ID"}
