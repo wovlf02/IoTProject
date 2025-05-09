@@ -8,41 +8,50 @@ import java.time.LocalDateTime;
 
 /**
  * 사용자 차단(FriendBlock) 엔티티
- * <p>
- * 친구 여부와 관계없이 사용자가 특정 사용자를 차단한 내역을 저장합니다.
- * 차단된 사용자는 나에게 친구 요청, 채팅, 피드 노출 등이 제한됩니다.
- * </p>
+ * - 친구 여부와 관계없이 사용자가 특정 사용자를 차단한 내역을 저장합니다.
  */
 @Entity
-@Getter @Setter
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Table(
-        uniqueConstraints = @UniqueConstraint(columnNames = {"blocker_id", "blocked_id"})
+        name = "FRIEND_BLOCK",
+        uniqueConstraints = @UniqueConstraint(name = "UK_BLOCKER_BLOCKED", columnNames = {"BLOCKER_ID", "BLOCKED_ID"})
 )
 public class FriendBlock {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "friend_block_seq_generator")
+    @SequenceGenerator(name = "friend_block_seq_generator", sequenceName = "FRIEND_BLOCK_SEQ", allocationSize = 1)
     private Long id;
 
     /**
-     * 차단한 사용자 (blocker)
+     * 차단한 사용자
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "blocker_id", nullable = false)
+    @JoinColumn(name = "BLOCKER_ID", nullable = false)
     private User blocker;
 
     /**
-     * 차단당한 사용자 (blocked)
+     * 차단된 사용자
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "blocked_id", nullable = false)
+    @JoinColumn(name = "BLOCKED_ID", nullable = false)
     private User blocked;
 
     /**
-     * 차단 시각
+     * 차단 일시
      */
+    @Column(name = "BLOCKED_AT", nullable = false)
     private LocalDateTime blockedAt;
+
+    /**
+     * 차단 생성 날짜 설정
+     */
+    @PrePersist
+    protected void onCreate() {
+        this.blockedAt = LocalDateTime.now();
+    }
 }

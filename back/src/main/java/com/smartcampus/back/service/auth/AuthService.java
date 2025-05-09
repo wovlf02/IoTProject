@@ -1,11 +1,13 @@
 package com.smartcampus.back.service.auth;
 
 import com.smartcampus.back.dto.auth.request.*;
+import com.smartcampus.back.entity.auth.University;
 import com.smartcampus.back.entity.auth.User;
 import com.smartcampus.back.dto.auth.response.LoginResponse;
 import com.smartcampus.back.dto.auth.response.TokenResponse;
 import com.smartcampus.back.global.exception.CustomException;
 import com.smartcampus.back.config.auth.JwtProvider;
+import com.smartcampus.back.repository.auth.UniversityRepository;
 import com.smartcampus.back.repository.auth.UserRepository;
 import com.smartcampus.back.service.util.MailService;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +32,8 @@ public class AuthService {
     private final JwtProvider jwtProvider;
     private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
+    private final UniversityService universityService;
+    private final UniversityRepository universityRepository;
 
     public Boolean checkUsername(UsernameCheckRequest request) {
         return !userRepository.existsByUsername(request.getUsername());
@@ -60,7 +64,11 @@ public class AuthService {
         redisTemplate.delete("EMAIL:CODE:" + request.getEmail());
     }
 
+    /**
+     * 회원가입
+     */
     public void register(RegisterRequest request) {
+        // 사용자 아이디와 이메일 중복 체크
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new CustomException("이미 존재하는 아이디입니다.");
         }
@@ -68,19 +76,23 @@ public class AuthService {
             throw new CustomException("이미 존재하는 이메일입니다.");
         }
 
+        // 사용자가 선택한 학교 정보 조회
+        University university = universityRepository.findById(request.getUniversityId())
+                .orElseThrow(() -> new CustomException("잘못된 학교 ID입니다."));
+
+        // User 엔티티 빌드 및 저장
         User user = User.builder()
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .email(request.getEmail())
                 .nickname(request.getNickname())
-                .grade(request.getGrade())
-                .studyHabit(request.getStudyHabit())
-                .subjects(request.getSubjects())
                 .profileImageUrl(request.getProfileImageUrl())
+                .university(university) // 선택한 학교 정보 설정
                 .build();
 
         userRepository.save(user);
     }
+
 
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByUsername(request.getUsername())

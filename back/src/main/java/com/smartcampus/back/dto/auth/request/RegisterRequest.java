@@ -1,19 +1,8 @@
 package com.smartcampus.back.dto.auth.request;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import org.springframework.web.multipart.MultipartFile;
+import jakarta.validation.constraints.*;
+import lombok.*;
 
-import java.util.List;
-
-/**
- * 회원가입 최종 요청 DTO입니다.
- * 기본 정보 + 학습 정보 + 프로필 정보를 포함합니다.
- */
 @Getter
 @NoArgsConstructor
 public class RegisterRequest {
@@ -45,25 +34,13 @@ public class RegisterRequest {
     private String nickname;
 
     /**
-     * 학년 (1, 2, 3 중 선택)
-     */
-    @NotNull(message = "학년은 필수 입력 값입니다.")
-    private Integer grade;
-
-    /**
-     * 관심 과목 리스트 (예: 수학, 영어 등)
-     */
-    @NotNull(message = "과목은 최소 1개 이상 선택해야 합니다.")
-    private List<String> subjects;
-
-    /**
-     * 공부 습관 (예: 새벽형, 야행성, 주말 집중형 등)
-     */
-    @NotBlank(message = "공부 습관은 필수 입력 값입니다.")
-    private String studyHabit;
-
-    /**
      * 프로필 이미지 URL (선택)
      */
     private String profileImageUrl;
+
+    /**
+     * 사용자가 선택한 학교 ID
+     */
+    @NotNull(message = "학교를 선택해야 합니다.")
+    private Long universityId;
 }

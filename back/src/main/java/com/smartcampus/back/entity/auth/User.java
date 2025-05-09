@@ -4,10 +4,9 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
-@Table(name = "users")
+@Table(name = "USERS")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,7 +15,8 @@ import java.util.List;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq_generator")
+    @SequenceGenerator(name = "user_seq_generator", sequenceName = "USER_SEQ", allocationSize = 1)
     private Long id;
 
     @Column(nullable = false, unique = true, length = 50)
@@ -31,30 +31,12 @@ public class User {
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
-    @Column(nullable = false, name = "email_verified")
-    @Builder.Default
-    private boolean emailVerified = false;
-
-    @Column(name = "refresh_token")
-    private String refreshToken;
-
-    @Column(name = "profile_image_url", length = 500)
+    @Column(name = "PROFILE_IMAGE_URL", length = 500)
     private String profileImageUrl;
 
     @Column(nullable = false)
-    private Integer grade; // ✅ 학년
-
-    @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "user_subjects", joinColumns = @JoinColumn(name = "user_id"))
-    @Column(name = "subject")
-    private List<String> subjects; // ✅ 관심 과목
-
-    @Column(nullable = false, length = 50)
-    private String studyHabit; // ✅ 공부 습관
-
-    @Column(nullable = false)
     @Builder.Default
-    private Boolean isDeleted = false; // ✅ 소프트 삭제용
+    private Boolean isDeleted = false;
 
     private LocalDateTime deletedAt;
 
@@ -63,6 +45,11 @@ public class User {
 
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    // 추가: User가 선택한 학교 정보
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "UNIVERSITY_ID", nullable = true) // 사용자가 학교를 선택하지 않은 경우도 허용
+    private University university;
 
     @PrePersist
     protected void onCreate() {
