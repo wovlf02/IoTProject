@@ -17,6 +17,7 @@ import FindAccountScreen from "./src/screens/auth/FindAccountScreen";
 import ResetPasswordScreen from "./src/screens/auth/ResetPasswordScreen";
 import ChatScreen from "./src/screens/community/ChatScreen";
 import FriendsScreen from "./src/screens/community/FriendsScreen";
+import UniversitySearchScreen from "./src/screens/auth/UniversitySearchScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -87,6 +88,7 @@ const App = () => (
             <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="FindAccount" component={FindAccountScreen} />
             <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+            <Stack.Screen name="UniversitySearch" component={UniversitySearchScreen}/>
             <Stack.Screen name="Main" component={MainTabNavigator} />
         </Stack.Navigator>
     </NavigationContainer>

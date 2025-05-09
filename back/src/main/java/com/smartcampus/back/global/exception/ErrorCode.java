@@ -18,6 +18,10 @@ import org.springframework.http.HttpStatus;
 @Getter
 public enum ErrorCode {
 
+    LOGIN_USER_NOT_FOUND(HttpStatus.BAD_REQUEST, "E1001", "존재하지 않는 사용자입니다."),
+    LOGIN_PASSWORD_MISMATCH(HttpStatus.BAD_REQUEST, "E1002", "비밀번호가 일치하지 않습니다."),
+
+
     // 400 Bad Request
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "E4001", "잘못된 요청입니다."),
     MISSING_PARAMETER(HttpStatus.BAD_REQUEST, "E4002", "필수 파라미터가 누락되었습니다."),

@@ -6,8 +6,10 @@ import com.smartcampus.back.dto.auth.request.*;
 import com.smartcampus.back.dto.auth.response.LoginResponse;
 import com.smartcampus.back.dto.auth.response.TokenResponse;
 import com.smartcampus.back.dto.common.MessageResponse;
+import com.smartcampus.back.entity.auth.University;
 import com.smartcampus.back.global.exception.CustomException;
 import com.smartcampus.back.global.response.ApiResponse;
+import com.smartcampus.back.repository.auth.UniversityRepository;
 import com.smartcampus.back.repository.auth.UserRepository;
 import com.smartcampus.back.service.auth.AuthService;
 import jakarta.validation.Valid;
@@ -39,6 +41,7 @@ public class AuthController {
     private final AuthService authService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UniversityRepository universityRepository;
 
     /**
      * 아이디 중복 확인
@@ -95,17 +98,11 @@ public class AuthController {
             @RequestPart("password") String rawPassword,
             @RequestPart("email") String email,
             @RequestPart("nickname") String nickname,
-            @RequestPart("grade") String gradeStr,  // ← String으로 받음
-            @RequestPart("subjects") String subjectsJson,
-            @RequestPart("studyHabit") String studyHabit,
+            @RequestPart("universityName") String universityName,
             @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
     ) {
         try {
-            Integer grade = Integer.parseInt(gradeStr);  // ← 여기서 변환
-
-            ObjectMapper objectMapper = new ObjectMapper();
-            List<String> subjects = objectMapper.readValue(subjectsJson, new TypeReference<>() {});
-
+            // 1. 프로필 이미지 처리
             String profileImageUrl = null;
             if (profileImage != null && !profileImage.isEmpty()) {
                 String storedName = UUID.randomUUID() + "_" + profileImage.getOriginalFilename();
@@ -116,16 +113,20 @@ public class AuthController {
                 profileImageUrl = "/uploads/profile/" + storedName;
             }
 
+            // 2. 대학 엔티티 조회
+            University university = universityRepository.findByName(universityName)
+                    .orElseThrow(() -> new CustomException("해당 이름의 대학교를 찾을 수 없습니다: " + universityName));
+
+            // 3. RegisterRequest 구성
             RegisterRequest request = new RegisterRequest();
             FieldUtils.writeField(request, "username", username, true);
             FieldUtils.writeField(request, "password", rawPassword, true);
             FieldUtils.writeField(request, "email", email, true);
             FieldUtils.writeField(request, "nickname", nickname, true);
-            FieldUtils.writeField(request, "grade", grade, true);
-            FieldUtils.writeField(request, "subjects", subjects, true);
-            FieldUtils.writeField(request, "studyHabit", studyHabit, true);
             FieldUtils.writeField(request, "profileImageUrl", profileImageUrl, true);
+            FieldUtils.writeField(request, "universityId", university.getId(), true);
 
+            // 4. 회원가입 처리
             authService.register(request);
             return ResponseEntity.ok(new MessageResponse("회원가입이 완료되었습니다."));
 

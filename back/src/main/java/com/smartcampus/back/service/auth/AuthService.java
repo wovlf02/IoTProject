@@ -7,6 +7,7 @@ import com.smartcampus.back.dto.auth.response.LoginResponse;
 import com.smartcampus.back.dto.auth.response.TokenResponse;
 import com.smartcampus.back.global.exception.CustomException;
 import com.smartcampus.back.config.auth.JwtProvider;
+import com.smartcampus.back.global.exception.ErrorCode;
 import com.smartcampus.back.repository.auth.UniversityRepository;
 import com.smartcampus.back.repository.auth.UserRepository;
 import com.smartcampus.back.service.util.MailService;
@@ -96,19 +97,19 @@ public class AuthService {
 
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new CustomException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.LOGIN_USER_NOT_FOUND));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new CustomException("비밀번호가 일치하지 않습니다.");
+            throw new CustomException(ErrorCode.LOGIN_PASSWORD_MISMATCH);
         }
 
         String accessToken = jwtProvider.generateAccessToken(user);
         String refreshToken = jwtProvider.generateRefreshToken(user);
-
         redisTemplate.opsForValue().set("RT:" + user.getId(), refreshToken, Duration.ofDays(14));
 
         return new LoginResponse(accessToken, refreshToken);
     }
+
 
     public void logout(TokenRequest request) {
         Long userId = jwtProvider.getUserIdFromToken(request.getAccessToken());

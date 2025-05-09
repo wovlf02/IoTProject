@@ -17,9 +17,9 @@ public class University {
     @SequenceGenerator(name = "university_seq_generator", sequenceName = "UNIVERSITY_SEQ", allocationSize = 1)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 200)
+    @Column(nullable = false, length = 200)
     private String name; // 학교 이름
 
-    @Column(length = 500)
+    @Column(length = 500, nullable = false)
     private String address; // 학교 주소 (선택 사항)
 }

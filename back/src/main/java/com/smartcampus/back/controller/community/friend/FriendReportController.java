@@ -1,4 +1,4 @@
-package com.smartcampus.back.controller.friend;
+package com.smartcampus.back.controller.community.friend;
 
 import com.smartcampus.back.dto.common.MessageResponse;
 import com.smartcampus.back.dto.community.report.request.ReportRequest;
