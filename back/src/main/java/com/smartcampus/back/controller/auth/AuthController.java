@@ -93,7 +93,7 @@ public class AuthController {
     }
 
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<MessageResponse> register(
+    public ApiResponse<String> register(
             @RequestPart("username") String username,
             @RequestPart("password") String rawPassword,
             @RequestPart("email") String email,
@@ -128,7 +128,7 @@ public class AuthController {
 
             // 4. 회원가입 처리
             authService.register(request);
-            return ResponseEntity.ok(new MessageResponse("회원가입이 완료되었습니다."));
+            return ApiResponse.ok("회원가입이 완료되었습니다.");
 
         } catch (Exception e) {
             log.error("회원가입 중 예외 발생", e);

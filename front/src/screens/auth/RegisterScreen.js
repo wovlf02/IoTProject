@@ -6,6 +6,8 @@ import {
 import { Picker } from '@react-native-picker/picker';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import api from '../../api/api';
+import {launchImageLibrary} from "react-native-image-picker";
+import axios from "axios";
 
 const { width, height } = Dimensions.get('window');
 
@@ -16,9 +18,8 @@ const RegisterScreen = () => {
     const [passwordConfirm, setPasswordConfirm] = useState('');
     const [isPasswordMatch, setIsPasswordMatch] = useState(null);
     const [nickname, setNickname] = useState('');
-
+    const [profileImage, setProfileImage] = useState(null);
     const [selectedUniversity, setSelectedUniversity] = useState(null);
-
     const [email, setEmail] = useState('');
     const [emailDomain, setEmailDomain] = useState('');
     const [isCustomDomain, setIsCustomDomain] = useState(false);
@@ -58,6 +59,14 @@ const RegisterScreen = () => {
         setIsPasswordMatch(password === text);
     };
 
+    const handleSelectProfileImage = async () => {
+        const result = await launchImageLibrary({ mediaType: 'photo' }, (res) => {
+            if (!res.didCancel && !res.errorCode && res.assets?.length > 0) {
+                setProfileImage(res.assets[0]);
+            }
+        });
+    };
+
     const handleDomainChange = (value) => {
         if (value === 'custom') {
             setIsCustomDomain(true);
@@ -78,7 +87,7 @@ const RegisterScreen = () => {
 
             if (response.data.success) {
                 setIsAuthSent(true);
-                setTimeLeft(300);
+                setTimeLeft(180);
                 Alert.alert('인증번호 발송', response.data.message);
             } else {
                 Alert.alert('실패', response.data.message);
@@ -137,6 +146,7 @@ const RegisterScreen = () => {
         );
     }, [username, isUsernameValid, password, passwordConfirm, isPasswordMatch, nickname, selectedUniversity, email, emailDomain, authInput]);
 
+
     const handleRegister = async () => {
         const formData = new FormData();
         formData.append('username', username);
@@ -145,38 +155,74 @@ const RegisterScreen = () => {
         formData.append('nickname', nickname);
         formData.append('universityName', selectedUniversity.name);
 
-        try {
-            const response = await api.post('/auth/register', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
+        if (profileImage) {
+            formData.append('profileImage', {
+                uri: profileImage.uri,
+                type: profileImage.type || 'image/jpeg',
+                name: profileImage.fileName || 'profile.jpg',
             });
-            if (!response.data.success) {
-                Alert.alert('회원가입 성공', response.data.message, [
+        }
+
+        try {
+            const response = await axios.post('http://192.168.0.2:8080/api/auth/register', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            const { success, message, data } = response.data;
+            console.log('📦 회원가입 응답:', response.data);
+
+            if (success) {
+                Alert.alert('회원가입 성공', data || message, [
                     { text: '확인', onPress: () => navigation.navigate('Login') }
                 ]);
             } else {
-                Alert.alert('회원가입 실패', response.data.message);
+                Alert.alert('회원가입 실패', message || '알 수 없는 오류가 발생했습니다.');
             }
         } catch (error) {
+            console.error('❌ 회원가입 중 오류:', error);
             Alert.alert('오류', '회원가입 중 문제가 발생했습니다.');
         }
     };
+
+
+
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <Text style={styles.title}>회원가입</Text>
 
+            <View style={styles.universityRow}>
+                <Text style={styles.selectedUniversityText}>
+                    {selectedUniversity?.name || '대학교를 선택해주세요'}
+                </Text>
+                <TouchableOpacity
+                    style={styles.searchButton}
+                    onPress={() => navigation.navigate('UniversitySearch', {
+                        onSelect: (univ) => {
+                            setSelectedUniversity(univ);
+                            navigation.goBack();
+                        }
+                    })}
+                >
+                    <Text style={styles.buttonText}>검색</Text>
+                </TouchableOpacity>
+            </View>
+
             {/* 아이디 + 중복확인 */}
-            <View style={styles.inputGroupRow}>
+            <View style={styles.inputWithButton}>
                 <TextInput
-                    style={[styles.inputSmall, isUsernameValid === false && styles.inputError]}
+                    style={styles.flexInput}
                     placeholder="아이디"
                     value={username}
                     onChangeText={setUsername}
                 />
-                <TouchableOpacity style={styles.checkButtonInline} onPress={handleUserIdCheck}>
+                <TouchableOpacity style={styles.inlineButton} onPress={handleUserIdCheck}>
                     <Text style={styles.buttonText}>중복확인</Text>
                 </TouchableOpacity>
             </View>
+
 
             {/* 비밀번호 */}
             <TextInput
@@ -202,22 +248,18 @@ const RegisterScreen = () => {
                 onChangeText={setNickname}
             />
 
-            <View style={styles.universityRow}>
-                <Text style={styles.selectedUniversityText}>
-                    {selectedUniversity?.name || '대학교를 선택해주세요'}
-                </Text>
-                <TouchableOpacity
-                    style={styles.searchButton}
-                    onPress={() => navigation.navigate('UniversitySearch', {
-                        onSelect: (univ) => {
-                            setSelectedUniversity(univ);
-                            navigation.goBack();
-                        }
-                    })}
-                >
-                    <Text style={styles.buttonText}>검색</Text>
+            {/* 프로필 이미지 선택 영역 */}
+            <View style={styles.profileContainer}>
+                {profileImage ? (
+                    <Image source={{ uri: profileImage.uri }} style={styles.profilePreview} />
+                ) : (
+                    <Text style={styles.profilePlaceholder}>선택된 이미지 없음</Text>
+                )}
+                <TouchableOpacity style={styles.profileButton} onPress={handleSelectProfileImage}>
+                    <Text style={styles.buttonText}>프로필 선택</Text>
                 </TouchableOpacity>
             </View>
+
 
 
             {/* 이메일 입력 */}
@@ -471,18 +513,73 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         height: 50,
     },
-    selectedUniversityText: {
-        flex: 1,
-        fontSize: 16,
-        color: '#333',
-    },
     searchButton: {
         backgroundColor: '#007BFF',
         paddingHorizontal: 14,
         paddingVertical: 8,
         borderRadius: 6,
         marginLeft: 10,
-    }
+    },
+    inputWithButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+        borderRadius: height * 0.015,
+        height: height * 0.06,
+        width: '100%',
+        marginBottom: height * 0.02,
+        paddingHorizontal: width * 0.03,
+    },
+    flexInput: {
+        flex: 1,
+        fontSize: 14,
+        color: '#000',
+    },
+    inlineButton: {
+        backgroundColor: '#007BFF',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 6,
+        marginLeft: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: height * 0.045, // 작게 조정
+        minWidth: 70,
+    },
+    selectedUniversityText: {
+        flex: 1,
+        fontSize: 14,
+        color: '#333',
+        paddingLeft: width * 0.01,
+    },
+    profileContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        width: '100%',
+        marginBottom: height * 0.02,
+    },
+    profilePlaceholder: {
+        fontSize: 14,
+        color: '#888',
+        flex: 1,
+    },
+    profileButton: {
+        backgroundColor: '#007BFF',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 6,
+        marginLeft: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    profilePreview: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: '#EEE',
+    },
+
 });
 
 export default RegisterScreen;

@@ -1,79 +1,147 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-    View, Text, StyleSheet, TextInput, FlatList, Image, TouchableOpacity
+    View, Text, StyleSheet, TextInput, FlatList, Image,
+    TouchableOpacity, Pressable, Dimensions, ActivityIndicator
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
+import moment from 'moment';
+import api from '../../api/api';
+
+const { width } = Dimensions.get('window');
 
 const BoardScreen = () => {
     const navigation = useNavigation();
+    const isFocused = useIsFocused();
     const [searchQuery, setSearchQuery] = useState('');
+    const [popupVisible, setPopupVisible] = useState(null);
+    const [postsData, setPostsData] = useState([]);
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [searchMode, setSearchMode] = useState(false);
 
-    // 🔹 하드코딩된 게시글 데이터
-    const posts = [
-        {
-            id: '1',
-            title: 'React Native로 커뮤니티 앱 만들기',
-            username: 'devUser1',
-            content: 'React Native를 사용하여 커뮤니티 앱을 개발하는 방법을 공유합니다.',
-            createdAt: '2025-02-22 14:30',
-            images: [
-                require('../../assets/sample1.png'),
-                require('../../assets/sample2.png'),
-                require('../../assets/sample3.png')
-            ]
-        },
-        {
-            id: '2',
-            title: 'JavaScript 최신 문법 정리',
-            username: 'frontendDev',
-            content: 'ES6+에서 추가된 유용한 문법들을 정리해봤습니다.',
-            createdAt: '2025-02-21 18:45',
-            images: [
-                require('../../assets/sample4.png'),
-                require('../../assets/sample5.png')
-            ]
-        },
-        {
-            id: '3',
-            title: '백엔드 개발자가 알아야 할 SQL 최적화',
-            username: 'backendGuru',
-            content: 'SQL 쿼리를 최적화하는 다양한 기법들을 소개합니다.',
-            createdAt: '2025-02-20 09:10',
-            images: []
+    useEffect(() => {
+        if (isFocused) {
+            fetchPosts(0, true);
         }
-    ];
+    }, [isFocused]);
 
-    // 🔹 게시글 카드 렌더링 함수
+    const fetchPosts = async (pageToLoad = 0, reset = false) => {
+        try {
+            setLoading(true);
+            const response = await api.get('/community/posts', {
+                params: { page: pageToLoad, size: 20 },
+            });
+
+            const newPosts = Array.isArray(response.data.posts) ? response.data.posts : [];
+            const currentPage = response.data.currentPage ?? 0;
+            const totalPages = response.data.totalPages ?? 0;
+
+            setPostsData(prev => reset ? newPosts : [...prev, ...newPosts]);
+            setHasMore(currentPage + 1 < totalPages);
+            setPage(currentPage);
+            setSearchMode(false);
+        } catch (err) {
+            console.error('전체 게시글 불러오기 실패', err);
+            setPostsData([]);
+            setHasMore(false);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSearch = async () => {
+        if (!searchQuery.trim()) {
+            fetchPosts(0, true);
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const response = await api.get('/community/posts/search', {
+                params: { keyword: searchQuery }
+            });
+
+            const newPosts = Array.isArray(response.data.posts) ? response.data.posts : [];
+            setPostsData(newPosts);
+            setHasMore(false);
+            setSearchMode(true);
+        } catch (error) {
+            console.error('검색 실패:', error);
+            setPostsData([]);
+            setHasMore(false);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleLoadMore = () => {
+        if (!searchMode && hasMore && !loading) {
+            fetchPosts(page + 1);
+        }
+    };
+
+    const handleReport = (postId) => {
+        console.log(`신고: ${postId}`);
+        setPopupVisible(null);
+    };
+
     const renderPost = ({ item }) => (
-        <TouchableOpacity style={styles.postCard} onPress={() => navigation.navigate('PostDetail', { postId: item.id })}>
+        <TouchableOpacity
+            activeOpacity={1}
+            style={styles.postCard}
+            onPress={() => navigation.navigate('PostDetail', { postId: item.postId })}
+        >
             <View style={styles.postHeader}>
-                <Text style={styles.postTitle}>{item.title}</Text>
-                <Text style={styles.postMeta}>{item.username} • {item.createdAt}</Text>
+                <Text style={styles.postTitle} numberOfLines={1}>{item.title}</Text>
+                <TouchableOpacity onPress={() => setPopupVisible(popupVisible === item.postId ? null : item.postId)}>
+                    <Image source={require('../../assets/more.png')} style={styles.moreIcon} />
+                </TouchableOpacity>
             </View>
-            <Text style={styles.postContent} numberOfLines={2}>{item.content}</Text>
-            {item.images.length > 0 && (
-                <View style={styles.imageContainer}>
-                    {item.images.slice(0, 3).map((img, index) => (
-                        <Image key={index} source={img} style={styles.postImage} />
-                    ))}
+
+            <Text style={styles.postMeta}>
+                {item.writerNickname} • {moment(item.createdAt).format('YYYY-MM-DD')}
+            </Text>
+
+            {item.content && (
+                <Text style={styles.postContent} numberOfLines={2}>
+                    {item.content.length > 50 ? item.content.slice(0, 50) + '...' : item.content}
+                </Text>
+            )}
+
+            <View style={styles.infoRow}>
+                <View style={styles.leftInfo}>
+                    {item.images?.length > 0 && (
+                        <Text style={styles.infoText}>📎 {item.images.length}개</Text>
+                    )}
                 </View>
+                <View style={styles.rightInfo}>
+                    <Text style={styles.infoText}>❤️ {item.likeCount}</Text>
+                    <Text style={styles.infoText}>💬 {item.commentCount}</Text>
+                    {item.viewCount !== undefined && (
+                        <Text style={styles.infoText}>👁️ {item.viewCount}</Text>
+                    )}
+                </View>
+            </View>
+
+            {popupVisible === item.postId && (
+                <Pressable style={styles.popup} onPress={() => handleReport(item.postId)}>
+                    <Text style={styles.popupText}>신고</Text>
+                </Pressable>
             )}
         </TouchableOpacity>
     );
 
     return (
         <View style={styles.container}>
-            {/* 📌 상단 헤더 (커뮤니티 제거, 게시판만 유지) */}
-            <View style={styles.headerContainer}>
-                <Text style={styles.headerTitle}>게시판</Text>
+            <View style={styles.topHeader}>
+                <Text style={styles.topHeaderTitle}>게시판</Text>
                 <TouchableOpacity onPress={() => navigation.openDrawer()}>
                     <Image source={require('../../assets/menu.png')} style={styles.menuIcon} />
                 </TouchableOpacity>
             </View>
 
-            {/* 🔍 검색 바 */}
             <View style={styles.searchBar}>
-                <Image source={require('../../assets/board_search.png')} style={styles.searchIcon} />
                 <TextInput
                     placeholder="게시글 검색"
                     placeholderTextColor="#888"
@@ -81,18 +149,33 @@ const BoardScreen = () => {
                     onChangeText={setSearchQuery}
                     style={styles.searchInput}
                 />
+                <TouchableOpacity onPress={handleSearch}>
+                    <Image source={require('../../assets/board_search.png')} style={styles.searchButtonIcon} />
+                </TouchableOpacity>
             </View>
 
-            {/* 📜 게시글 리스트 */}
-            <FlatList
-                data={posts.filter(post => post.title.includes(searchQuery))}
-                keyExtractor={(item) => item.id}
-                renderItem={renderPost}
-                contentContainerStyle={styles.postList}
-            />
+            {loading && postsData.length === 0 ? (
+                <ActivityIndicator size="large" color="#007BFF" style={{ marginTop: 20 }} />
+            ) : (
+                <FlatList
+                    data={postsData || []}
+                    keyExtractor={(item) => item.postId?.toString() ?? 'unknown'}
+                    renderItem={renderPost}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
+                    contentContainerStyle={styles.postList}
+                    ListEmptyComponent={
+                        <Text style={{ textAlign: 'center', marginTop: 30, color: '#888' }}>
+                            검색 결과가 없습니다.
+                        </Text>
+                    }
+                />
+            )}
 
-            {/* 📝 게시글 작성 버튼 */}
-            <TouchableOpacity style={styles.floatingButton} onPress={() => navigation.navigate('CreatePost')}>
+            <TouchableOpacity
+                style={styles.floatingButton}
+                onPress={() => navigation.navigate('CreatePost')}
+            >
                 <Image source={require('../../assets/add.png')} style={styles.addIcon} />
             </TouchableOpacity>
         </View>
@@ -102,114 +185,45 @@ const BoardScreen = () => {
 export default BoardScreen;
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#F8F9FA',
+    container: { flex: 1, backgroundColor: '#F8F9FA' },
+    topHeader: {
+        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+        paddingHorizontal: 20, paddingVertical: 15, backgroundColor: '#FFF', elevation: 3,
     },
-    /* 📌 헤더 스타일 */
-    headerContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 15,
-        paddingVertical: 15,
-        backgroundColor: '#FFF',
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
+    topHeaderTitle: {
+        fontSize: 20, fontWeight: 'bold', textAlign: 'center', flex: 1, marginLeft: 28,
     },
-    headerTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        flex: 1,
-    },
-    menuIcon: {
-        width: 28,
-        height: 28,
-        resizeMode: 'contain',
-    },
-    /* 🔍 검색 바 */
+    menuIcon: { width: 24, height: 24 },
     searchBar: {
-        flexDirection: 'row',
-        backgroundColor: '#FFF',
-        padding: 10,
-        marginHorizontal: 15,
-        marginTop: 10,
-        borderRadius: 10,
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-        elevation: 3,
+        flexDirection: 'row', backgroundColor: '#FFF', padding: 10, margin: 15,
+        borderRadius: 10, alignItems: 'center', elevation: 3,
     },
-    searchIcon: {
-        width: 20,
-        height: 20,
-        tintColor: '#888',
-    },
-    searchInput: {
-        flex: 1,
-        marginLeft: 8,
-    },
-    /* 📜 게시글 목록 */
-    postList: {
-        paddingBottom: 80,
-    },
+    searchInput: { flex: 1, marginLeft: 8 },
+    searchButtonIcon: { width: 20, height: 20, marginLeft: 8, tintColor: '#007BFF' },
+    postList: { paddingBottom: 100 },
     postCard: {
-        backgroundColor: '#FFF',
-        padding: 15,
-        marginHorizontal: 15,
-        marginVertical: 10,
-        borderRadius: 10,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-        elevation: 3,
+        backgroundColor: '#FFF', padding: 15, marginHorizontal: 15, marginVertical: 10,
+        borderRadius: 12, elevation: 3, position: 'relative'
     },
-    postHeader: {
-        marginBottom: 5,
+    postHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    postTitle: { fontWeight: 'bold', fontSize: 16, flex: 1 },
+    moreIcon: { width: 20, height: 20, marginLeft: 10 },
+    postMeta: { fontSize: 12, color: '#666', marginTop: 2 },
+    postContent: { marginTop: 8, fontSize: 14, color: '#333' },
+    infoRow: {
+        flexDirection: 'row', justifyContent: 'space-between', marginTop: 10, alignItems: 'center',
     },
-    postTitle: {
-        fontWeight: 'bold',
-        fontSize: 16,
-    },
-    postMeta: {
-        fontSize: 12,
-        color: '#666',
-    },
-    postContent: {
-        marginTop: 5,
-        fontSize: 14,
-        color: '#444',
-    },
-    imageContainer: {
-        flexDirection: 'row',
-        marginTop: 8,
-    },
-    postImage: {
-        width: 70,
-        height: 70,
-        marginRight: 5,
-        borderRadius: 5,
-    },
-    /* 📝 게시글 작성 버튼 */
+    leftInfo: { flexDirection: 'row' },
+    rightInfo: { flexDirection: 'row', gap: 12 },
+    infoText: { fontSize: 12, color: '#555' },
     floatingButton: {
-        position: 'absolute',
-        right: 20,
-        bottom: 20,
-        backgroundColor: '#007BFF',
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        alignItems: 'center',
-        justifyContent: 'center',
-        elevation: 5,
+        position: 'absolute', right: 20, bottom: 20, backgroundColor: '#007BFF',
+        width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', elevation: 5,
     },
-    addIcon: {
-        width: 30,
-        height: 30,
-        tintColor: '#FFF',
+    addIcon: { width: 30, height: 30, tintColor: '#FFF' },
+    popup: {
+        position: 'absolute', top: 30, right: 8, backgroundColor: '#FFF', borderRadius: 6,
+        paddingHorizontal: 12, paddingVertical: 8, elevation: 6, zIndex: 999
     },
+    popupText: { color: '#007BFF', fontWeight: '500' },
 });
