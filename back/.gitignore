@@ -39,4 +39,3 @@ out/
 ### JTE ###
 /jte-classes/
 src/main/resources/application.yml
-src/main/resources/firebase/smartcampus-9d2fc-firebase-adminsdk-fbsvc-b76ff78dbe.json

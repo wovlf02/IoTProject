@@ -1,165 +1,213 @@
 package com.smartcampus.back.controller.auth;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hamcam.back.dto.auth.request.*;
 import com.smartcampus.back.dto.auth.request.*;
-import com.smartcampus.back.dto.auth.response.*;
-import com.smartcampus.back.global.dto.response.ApiResponse;
+import com.smartcampus.back.dto.auth.response.LoginResponse;
+import com.smartcampus.back.dto.auth.response.TokenResponse;
+import com.smartcampus.back.dto.common.MessageResponse;
+import com.smartcampus.back.global.exception.CustomException;
+import com.smartcampus.back.global.response.ApiResponse;
+import com.smartcampus.back.repository.auth.UserRepository;
 import com.smartcampus.back.service.auth.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.reflect.FieldUtils;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.List;
+import java.util.UUID;
 
 /**
- * 인증 관련 API를 제공하는 컨트롤러 클래스입니다.
- * 회원가입, 로그인, 중복 확인, 이메일 인증, 비밀번호 재설정, 사용자 정보 조회 및 수정 등을 처리합니다.
+ * 인증 및 회원 관련 API를 제공하는 컨트롤러입니다.
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     /**
-     * 아이디 중복 여부를 확인합니다.
-     *
-     * @param request 아이디를 담은 요청 DTO
-     * @return 사용 가능 여부를 포함한 ApiResponse
+     * 아이디 중복 확인
      */
     @PostMapping("/check-username")
-    public ResponseEntity<ApiResponse<Boolean>> checkUsername(@RequestBody @Valid UsernameCheckRequest request) {
-        boolean available = authService.isUsernameAvailable(request.getUsername());
-        return ResponseEntity.ok(ApiResponse.success(available));
+    public ApiResponse<Boolean> checkUsername(@RequestBody @Valid UsernameCheckRequest request) {
+        return ApiResponse.ok(authService.checkUsername(request));
     }
 
     /**
-     * 닉네임 중복 여부를 확인합니다.
-     *
-     * @param request 닉네임을 담은 요청 DTO
-     * @return 사용 가능 여부를 포함한 ApiResponse
+     * 닉네임 중복 확인
      */
     @PostMapping("/check-nickname")
-    public ResponseEntity<ApiResponse<Boolean>> checkNickname(@RequestBody @Valid NicknameCheckRequest request) {
-        boolean available = authService.isNicknameAvailable(request.getNickname());
-        return ResponseEntity.ok(ApiResponse.success(available));
+    public ApiResponse<Boolean> checkNickname(@RequestBody @Valid NicknameCheckRequest request) {
+        return ApiResponse.ok(authService.checkNickname(request));
     }
 
     /**
-     * 이메일 중복 여부를 확인합니다.
-     *
-     * @param request 이메일을 담은 요청 DTO
-     * @return 사용 가능 여부를 포함한 ApiResponse
+     * 이메일 중복 확인
      */
     @PostMapping("/check-email")
-    public ResponseEntity<ApiResponse<Boolean>> checkEmail(@RequestBody @Valid EmailCheckRequest request) {
-        boolean available = authService.isEmailAvailable(request.getEmail());
-        return ResponseEntity.ok(ApiResponse.success(available));
+    public ApiResponse<Boolean> checkEmail(@RequestBody @Valid EmailRequest request) {
+        return ApiResponse.ok(authService.checkEmail(request));
     }
 
     /**
-     * 이메일 인증 코드를 발송합니다.
-     *
-     * @param request 이메일을 담은 요청 DTO
-     * @return 발송된 인증 코드 식별자 또는 메시지를 담은 ApiResponse
+     * 이메일 인증코드 발송
      */
     @PostMapping("/send-code")
-    public ResponseEntity<ApiResponse<String>> sendEmailCode(@RequestBody @Valid EmailSendRequest request) {
-        String result = authService.sendVerificationCode(request.getEmail());
-        return ResponseEntity.ok(ApiResponse.success(result));
+    public ApiResponse<String> sendVerificationCode(@RequestBody @Valid EmailSendRequest request) {
+        return ApiResponse.ok(authService.sendVerificationCode(request));
     }
 
     /**
-     * 이메일 인증 코드를 검증합니다.
-     *
-     * @param request 이메일과 인증 코드를 담은 요청 DTO
-     * @return 인증 성공 여부를 담은 ApiResponse
+     * 이메일 인증코드 검증
      */
     @PostMapping("/verify-code")
-    public ResponseEntity<ApiResponse<Boolean>> verifyEmailCode(@RequestBody @Valid EmailVerifyRequest request) {
-        boolean isValid = authService.verifyEmailCode(request.getEmail(), request.getCode());
-        return ResponseEntity.ok(ApiResponse.success(isValid));
+    public ApiResponse<Boolean> verifyCode(@RequestBody @Valid EmailVerifyRequest request) {
+        return ApiResponse.ok(authService.verifyCode(request));
     }
 
     /**
-     * 회원가입을 수행합니다.
-     *
-     * @param request 회원가입 정보(아이디, 닉네임, 비밀번호, 이메일, 시간표 등)를 담은 DTO
-     * @return 성공 시 빈 응답
+     * 회원가입 도중 임시 데이터 삭제 (Redis/DB)
      */
-    @PostMapping("/signup")
-    public ResponseEntity<ApiResponse<Void>> signup(@RequestBody @Valid SignupRequest request) {
-        authService.signup(request);
-        return ResponseEntity.ok(ApiResponse.success());
+    @DeleteMapping("/temp")
+    public ApiResponse<Void> deleteTempData(@RequestBody @Valid EmailRequest request) {
+        authService.deleteTempData(request);
+        return ApiResponse.ok();
+    }
+
+    @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<MessageResponse> register(
+            @RequestPart("username") String username,
+            @RequestPart("password") String rawPassword,
+            @RequestPart("email") String email,
+            @RequestPart("nickname") String nickname,
+            @RequestPart("grade") String gradeStr,  // ← String으로 받음
+            @RequestPart("subjects") String subjectsJson,
+            @RequestPart("studyHabit") String studyHabit,
+            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
+    ) {
+        try {
+            Integer grade = Integer.parseInt(gradeStr);  // ← 여기서 변환
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            List<String> subjects = objectMapper.readValue(subjectsJson, new TypeReference<>() {});
+
+            String profileImageUrl = null;
+            if (profileImage != null && !profileImage.isEmpty()) {
+                String storedName = UUID.randomUUID() + "_" + profileImage.getOriginalFilename();
+                Path uploadDir = Paths.get("uploads/profile");
+                Files.createDirectories(uploadDir);
+                Path targetPath = uploadDir.resolve(storedName);
+                Files.copy(profileImage.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+                profileImageUrl = "/uploads/profile/" + storedName;
+            }
+
+            RegisterRequest request = new RegisterRequest();
+            FieldUtils.writeField(request, "username", username, true);
+            FieldUtils.writeField(request, "password", rawPassword, true);
+            FieldUtils.writeField(request, "email", email, true);
+            FieldUtils.writeField(request, "nickname", nickname, true);
+            FieldUtils.writeField(request, "grade", grade, true);
+            FieldUtils.writeField(request, "subjects", subjects, true);
+            FieldUtils.writeField(request, "studyHabit", studyHabit, true);
+            FieldUtils.writeField(request, "profileImageUrl", profileImageUrl, true);
+
+            authService.register(request);
+            return ResponseEntity.ok(new MessageResponse("회원가입이 완료되었습니다."));
+
+        } catch (Exception e) {
+            log.error("회원가입 중 예외 발생", e);
+            throw new CustomException("회원가입 처리 중 오류가 발생했습니다.");
+        }
     }
 
     /**
-     * 로그인을 수행하고 JWT 토큰을 반환합니다.
-     *
-     * @param request 아이디 및 비밀번호 정보를 담은 요청 DTO
-     * @return JWT 액세스/리프레시 토큰을 담은 응답 DTO
+     * 로그인 요청 - JWT 발급
      */
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginResponse>> login(@RequestBody @Valid LoginRequest request) {
-        LoginResponse token = authService.login(request);
-        return ResponseEntity.ok(ApiResponse.success(token));
+    public ApiResponse<LoginResponse> login(@RequestBody @Valid LoginRequest request) {
+        return ApiResponse.ok(authService.login(request));
     }
 
     /**
-     * 로그아웃을 수행합니다. 서버에 저장된 Refresh Token을 삭제합니다.
-     *
-     * @param authorization JWT AccessToken (헤더에서 전달)
-     * @return 성공 시 빈 응답
+     * 로그아웃 - refresh 제거 및 access 블랙리스트 처리
      */
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Void>> logout(@RequestHeader("Authorization") String authorization) {
-        authService.logout(authorization);
-        return ResponseEntity.ok(ApiResponse.success());
+    public ApiResponse<Void> logout(@RequestBody @Valid TokenRequest request) {
+        authService.logout(request);
+        return ApiResponse.ok();
     }
 
     /**
-     * 비밀번호 재설정용 이메일 인증 코드를 발송합니다.
-     *
-     * @param request 이메일을 담은 요청 DTO
-     * @return 발송 결과 메시지
+     * access 토큰 재발급 (Sliding 방식)
      */
-    @PostMapping("/reset-password/send-code")
-    public ResponseEntity<ApiResponse<String>> sendPasswordResetCode(@RequestBody @Valid PasswordResetEmailRequest request) {
-        String result = authService.sendPasswordResetCode(request.getEmail());
-        return ResponseEntity.ok(ApiResponse.success(result));
+    @PostMapping("/reissue")
+    public ApiResponse<TokenResponse> reissue(@RequestBody @Valid TokenRequest request) {
+        return ApiResponse.ok(authService.reissue(request));
     }
 
     /**
-     * 비밀번호를 재설정합니다.
-     *
-     * @param request 이메일, 인증코드, 새 비밀번호를 담은 요청 DTO
-     * @return 성공 시 빈 응답
+     * 아이디 찾기 - 인증 코드 발송
      */
-    @PostMapping("/reset-password")
-    public ResponseEntity<ApiResponse<Void>> resetPassword(@RequestBody @Valid PasswordResetRequest request) {
-        authService.resetPassword(request);
-        return ResponseEntity.ok(ApiResponse.success());
+    @PostMapping("/find-username/send-code")
+    public ApiResponse<String> sendFindUsernameCode(@RequestBody @Valid EmailRequest request) {
+        return ApiResponse.ok(authService.sendFindUsernameCode(request));
     }
 
     /**
-     * 내 정보(로그인 사용자 정보)를 조회합니다.
-     *
-     * @return 현재 로그인된 사용자의 정보 DTO
+     * 아이디 찾기 - 인증코드 검증 및 반환
      */
-    @GetMapping("/me")
-    public ResponseEntity<ApiResponse<MyInfoResponse>> getMyInfo() {
-        MyInfoResponse userInfo = authService.getMyInfo();
-        return ResponseEntity.ok(ApiResponse.success(userInfo));
+    @PostMapping("/find-username/verify-code")
+    public ApiResponse<String> verifyFindUsernameCode(@RequestBody @Valid EmailVerifyRequest request) {
+        return ApiResponse.ok(authService.verifyFindUsernameCode(request));
     }
 
     /**
-     * 내 정보를 수정합니다 (닉네임, 비밀번호 등).
-     *
-     * @param request 변경할 사용자 정보를 담은 요청 DTO
-     * @return 성공 시 빈 응답
+     * 비밀번호 재설정 - 본인 확인 요청
      */
-    @PutMapping("/me")
-    public ResponseEntity<ApiResponse<Void>> updateMyInfo(@RequestBody @Valid MyInfoUpdateRequest request) {
-        authService.updateMyInfo(request);
-        return ResponseEntity.ok(ApiResponse.success());
+    @PostMapping("/password/request")
+    public ApiResponse<String> requestPasswordReset(@RequestBody @Valid PasswordResetRequest request) {
+        return ApiResponse.ok(authService.requestPasswordReset(request));
+    }
+
+    /**
+     * 비밀번호 재설정 - 인증 코드 검증
+     */
+    @PostMapping("/password/verify-code")
+    public ApiResponse<Boolean> verifyPasswordResetCode(@RequestBody @Valid EmailVerifyRequest request) {
+        return ApiResponse.ok(authService.verifyPasswordResetCode(request));
+    }
+
+    /**
+     * 비밀번호 재설정 - 새 비밀번호 저장
+     */
+    @PutMapping("/password/update")
+    public ApiResponse<Void> updatePassword(@RequestBody @Valid PasswordChangeRequest request) {
+        authService.updatePassword(request);
+        return ApiResponse.ok();
+    }
+
+    /**
+     * 회원 탈퇴 요청
+     */
+    @DeleteMapping("/withdraw")
+    public ApiResponse<Void> withdraw(@RequestBody @Valid PasswordConfirmRequest request) {
+        authService.withdraw(request);
+        return ApiResponse.ok();
     }
 }
