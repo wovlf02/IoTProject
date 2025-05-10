@@ -1,3 +1,4 @@
+// 생략된 import 포함하여 동일
 import React, { useEffect, useState } from 'react';
 import {
     View, Text, StyleSheet, ScrollView, Image,
@@ -12,7 +13,7 @@ import { useRoute } from '@react-navigation/native';
 import ImageViewing from 'react-native-image-viewing';
 import RNFS from 'react-native-fs';
 import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
-import FastImage from 'react-native-fast-image'; // ✅ 추가
+import FastImage from 'react-native-fast-image';
 
 const BASE_URL = 'http://192.168.0.2:8080';
 
@@ -35,7 +36,6 @@ const PostDetailScreen = () => {
         try {
             const token = await EncryptedStorage.getItem('accessToken');
             const decoded = jwtDecode(token);
-
             const res = await api.get(`/community/posts/${postId}`);
             setPost(res.data);
 
@@ -49,28 +49,12 @@ const PostDetailScreen = () => {
                 uri: `${BASE_URL}${url}`
             })) || [];
 
-            console.log('[이미지 리스트]', imageList);
             setImageViewerImages(imageList);
-
         } catch (err) {
             Alert.alert('오류', '게시글 정보 로딩 실패');
         } finally {
             setLoading(false);
         }
-    };
-
-    const handleLikePost = async () => {
-        try {
-            await api.post(`/community/likes/posts/${postId}`);
-            fetchPost();
-        } catch (err) {
-            Alert.alert('오류', '좋아요 실패');
-        }
-    };
-
-    const handleReport = () => {
-        Alert.alert('신고 완료', '신고가 접수되었습니다.');
-        setPopupVisible(false);
     };
 
     const handleDownloadImage = async (url) => {
@@ -87,19 +71,62 @@ const PostDetailScreen = () => {
                 }
             }
 
-            const filename = url.split('/').pop();
-            const dest = `${RNFS.DownloadDirectoryPath}/${filename}`;
+            const timestamp = Date.now();
+            const originalName = url.split('/').pop().split('?')[0];
+            const filename = `${timestamp}_${originalName}`;
+            const dest =
+                Platform.OS === 'android'
+                    ? `${RNFS.DownloadDirectoryPath}/${filename}`
+                    : `${RNFS.DocumentDirectoryPath}/${filename}`;
+            const uniqueUrl = `${url}?nocache=${timestamp}`;
 
-            const result = await RNFS.downloadFile({ fromUrl: url, toFile: dest }).promise;
+            console.log('📦 다운로드 경로:', dest);
+            console.log('🌐 실제 다운로드 URL:', uniqueUrl);
+
+            // Download 디렉토리 보장
+            await RNFS.mkdir(RNFS.DownloadDirectoryPath);
+
+            // 기존 파일이 있다면 삭제
+            if (await RNFS.exists(dest)) {
+                await RNFS.unlink(dest);
+                console.log('🧹 기존 파일 삭제 완료');
+            }
+
+            const result = await RNFS.downloadFile({
+                fromUrl: uniqueUrl,
+                toFile: dest,
+            }).promise;
+
+            console.log('📥 다운로드 결과:', result);
 
             if (result.statusCode === 200) {
-                Alert.alert('✅ 다운로드 완료', '사진이 저장되었습니다.');
+                if (Platform.OS === 'android') {
+                    await RNFS.scanFile(dest);
+                }
+                Alert.alert('✅ 다운로드 완료', `사진이 저장되었습니다.\n\n경로:\n${dest}`);
             } else {
-                throw new Error('다운로드 실패');
+                throw new Error(`다운로드 실패, 상태 코드: ${result.statusCode}`);
             }
         } catch (err) {
+            console.error('❌ 다운로드 오류:', err);
             Alert.alert('오류', '사진 다운로드 중 문제가 발생했습니다.');
         }
+    };
+
+
+
+    const handleLikePost = async () => {
+        try {
+            await api.post(`/community/likes/posts/${postId}`);
+            fetchPost();
+        } catch (err) {
+            Alert.alert('오류', '좋아요 실패');
+        }
+    };
+
+    const handleReport = () => {
+        Alert.alert('신고 완료', '신고가 접수되었습니다.');
+        setPopupVisible(false);
     };
 
     if (loading || !post) return <Text style={{ padding: 20 }}>로딩 중...</Text>;
@@ -143,7 +170,6 @@ const PostDetailScreen = () => {
                                 setImageViewerVisible(true);
                             }}
                         >
-                            {/* 🔍 FastImage 테스트로 대체 */}
                             <FastImage
                                 source={{ uri: item.uri }}
                                 style={styles.image}
