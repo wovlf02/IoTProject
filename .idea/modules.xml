@@ -4,7 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/IoTProject.iml" filepath="$PROJECT_DIR$/.idea/IoTProject.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/back.main.iml" filepath="$PROJECT_DIR$/.idea/modules/back.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/com.studymate.back.main.iml" filepath="$PROJECT_DIR$/.idea/modules/com.studymate.back.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/com.smartcampus.back.main.iml" filepath="$PROJECT_DIR$/.idea/modules/com.smartcampus.back.main.iml" />
     </modules>
   </component>
 </project>
