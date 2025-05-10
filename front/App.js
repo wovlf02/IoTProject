@@ -21,6 +21,7 @@ import ResetPasswordScreen from "./src/screens/auth/ResetPasswordScreen";
 import ChatScreen from "./src/screens/community/ChatScreen";
 import FriendsScreen from "./src/screens/community/FriendsScreen";
 import UniversitySearchScreen from "./src/screens/auth/UniversitySearchScreen";
+import PostDetailScreen from "./src/screens/community/PostDetailScreen";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -91,6 +92,7 @@ const App = () => (
             <Stack.Screen name="UniversitySearch" component={UniversitySearchScreen} />
             <Stack.Screen name="Main" component={MainTabNavigator} />
             <Stack.Screen name="CreatePost" component={CreatePostScreen} />
+            <Stack.Screen name="PostDetail" component={PostDetailScreen}/>
         </Stack.Navigator>
     </NavigationContainer>
 );

@@ -28,6 +28,9 @@ public class PostResponse {
     private int likeCount;
     private boolean liked;
     private boolean favorite;
+    private int viewCount;
+    private int attachmentCount;
+    private int commentCount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
