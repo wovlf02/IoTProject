@@ -36,10 +36,10 @@ public class PostController {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             PostCreateRequest request = objectMapper.readValue(postJson, PostCreateRequest.class);
-
             Long postId = postService.createPost(request, files);
             return ResponseEntity.ok(new MessageResponse("게시글이 등록되었습니다.", postId));
         } catch (Exception e) {
+            e.printStackTrace();
             throw new CustomException("게시글 등록 중 오류가 발생했습니다.");
         }
     }
@@ -63,9 +63,7 @@ public class PostController {
         } catch (Exception e) {
             throw new CustomException("게시글 수정 중 오류가 발생했습니다.");
         }
-
     }
-
 
     /**
      * 게시글 삭제
@@ -77,15 +75,14 @@ public class PostController {
     }
 
     /**
-     * 게시글 목록 조회 (페이지, 카테고리)
+     * 게시글 목록 조회 (페이지네이션)
      */
     @GetMapping
     public ResponseEntity<PostListResponse> getPostList(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String category
+            @RequestParam(defaultValue = "10") int size
     ) {
-        return ResponseEntity.ok(postService.getPostList(page, size, category));
+        return ResponseEntity.ok(postService.getPostList(page, size));
     }
 
     /**
@@ -102,24 +99,21 @@ public class PostController {
     @GetMapping("/search")
     public ResponseEntity<PostListResponse> searchPosts(
             @RequestParam String keyword,
-            @RequestParam(required = false) String category,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return ResponseEntity.ok(postService.searchPosts(keyword, category, pageable));
+        return ResponseEntity.ok(postService.searchPosts(keyword, pageable));
     }
-
 
     /**
      * 조건별 게시글 필터링
      */
     @GetMapping("/filter")
     public ResponseEntity<PostListResponse> filterPosts(
-            @RequestParam(required = false) String category,
             @RequestParam(required = false, defaultValue = "recent") String sort,
             @RequestParam(required = false, defaultValue = "0") int minLikes,
             @RequestParam(required = false) String keyword
     ) {
-        return ResponseEntity.ok(postService.filterPosts(category, sort, minLikes, keyword));
+        return ResponseEntity.ok(postService.filterPosts(sort, minLikes, keyword));
     }
 
     /**

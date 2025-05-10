@@ -39,11 +39,11 @@ public class Post {
     @Column(name = "CONTENT", nullable = false, columnDefinition = "CLOB")
     private String content;
 
-    /**
-     * 카테고리
-     */
-    @Column(name = "CATEGORY", nullable = false, length = 50)
-    private String category;
+//    /**
+//     * 카테고리
+//     */
+//    @Column(name = "CATEGORY", nullable = false, length = 50)
+//    private String category;
 
     /**
      * 작성자

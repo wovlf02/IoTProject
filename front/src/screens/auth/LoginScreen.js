@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, Alert } from 'react-native';
 import api from '../../api/api'; // 서버 API 호출 파일 import
 import EncryptedStorage from 'react-native-encrypted-storage';
+import {jwtDecode} from "jwt-decode";
 
 const LoginScreen = ({ navigation }) => {
     const [username, setUsername] = useState('');
@@ -14,24 +15,26 @@ const LoginScreen = ({ navigation }) => {
             const response = await api.post('/auth/login', { username, password });
 
             if (response.status === 200) {
-                const { accessToken, refreshToken, username, email, name } = response.data;
+                const { accessToken, refreshToken } = response.data.data;
 
-                // 🔒 보안 저장소에 Refresh Token 저장
+                // ✅ accessToken 디코딩해서 userId 추출
+                const decoded = jwtDecode(accessToken);
+                const userId = decoded.sub; // 서버에서 .setSubject(userId) 했으므로
+
+                // ✅ 토큰 및 식별 정보 저장
+                await EncryptedStorage.setItem('accessToken', accessToken);
                 await EncryptedStorage.setItem('refreshToken', refreshToken);
+                await EncryptedStorage.setItem('userId', String(userId)); // 문자열로 저장
 
-                // 🔄 홈 화면으로 이동하며 사용자 데이터 전달
-                navigation.replace('Main', {
-                    username: username,
-                    email: email,
-                    name: name,
-                    accessToken: accessToken,
-                });
+                // ✅ 홈 화면으로 이동
+                navigation.replace('Main');
             }
         } catch (error) {
             console.error(error);
             Alert.alert('로그인 실패', '아이디 또는 비밀번호를 확인하세요.');
         }
     };
+
 
     // 소셜 로그인 처리
     const handleSocialLogin = async (platform) => {

@@ -105,7 +105,6 @@ public class AuthService {
 
         String accessToken = jwtProvider.generateAccessToken(user);
         String refreshToken = jwtProvider.generateRefreshToken(user);
-        redisTemplate.opsForValue().set("RT:" + user.getId(), refreshToken, Duration.ofDays(14));
 
         return new LoginResponse(accessToken, refreshToken);
     }

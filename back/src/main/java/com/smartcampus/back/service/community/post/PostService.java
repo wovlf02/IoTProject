@@ -8,6 +8,7 @@ import com.smartcampus.back.entity.auth.User;
 import com.smartcampus.back.entity.community.Post;
 import com.smartcampus.back.entity.community.PostFavorite;
 import com.smartcampus.back.global.exception.CustomException;
+import com.smartcampus.back.repository.auth.UserRepository;
 import com.smartcampus.back.repository.community.post.PostFavoriteRepository;
 import com.smartcampus.back.repository.community.post.PostRepository;
 import com.smartcampus.back.security.auth.CustomUserDetails;
@@ -31,6 +32,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final PostFavoriteRepository postFavoriteRepository;
     private final AttachmentService attachmentService;
+    private final UserRepository userRepository;
 
     private Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -48,8 +50,12 @@ public class PostService {
     }
 
     private User getCurrentUser() {
-        return User.builder().id(getCurrentUserId()).build();
+        Long userId = getCurrentUserId();
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException("사용자 정보를 불러올 수 없습니다."));
     }
+
+
 
 
     /**
@@ -61,9 +67,8 @@ public class PostService {
                 .writer(getCurrentUser())
                 .title(request.getTitle())
                 .content(request.getContent())
-                .category(request.getCategory())
                 .createdAt(LocalDateTime.now())
-                .build();
+                .build(); // 🔻 category 제거
         post = postRepository.save(post);
 
         if (files != null && files.length > 0) {
@@ -73,6 +78,7 @@ public class PostService {
         return post.getId();
     }
 
+
     /**
      * 게시글 수정
      * - 본문 및 카테고리 업데이트, 첨부파일 삭제 및 추가
@@ -81,8 +87,7 @@ public class PostService {
         Post post = getPostOrThrow(postId);
         post.setTitle(request.getTitle());
         post.setContent(request.getContent());
-        post.setCategory(request.getCategory());
-        post.setUpdatedAt(LocalDateTime.now());
+        post.setUpdatedAt(LocalDateTime.now()); // 🔻 category 제거
         postRepository.save(post);
 
         if (request.getDeleteFileIds() != null) {
@@ -93,6 +98,7 @@ public class PostService {
             attachmentService.uploadPostFiles(post.getId(), files);
         }
     }
+
 
     /**
      * 게시글 삭제
@@ -113,52 +119,43 @@ public class PostService {
     /**
      * 게시글 목록 조회 (카테고리 필터링 및 페이징 포함)
      */
-    public PostListResponse getPostList(int page, int size, String category) {
+    public PostListResponse getPostList(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<Post> posts = (category != null)
-                ? postRepository.findByCategory(category, pageable)
-                : postRepository.findAll(pageable);
+        Page<Post> posts = postRepository.findAll(pageable);
         return PostListResponse.from(posts);
     }
+
+
 
     /**
      * 키워드 및 카테고리 기반 검색 (페이징 포함)
      */
-    public PostListResponse searchPosts(String keyword, String category, Pageable pageable) {
+    public PostListResponse searchPosts(String keyword, Pageable pageable) {
         Page<Post> result;
 
-        boolean hasKeyword = keyword != null && !keyword.trim().isEmpty();
-        boolean hasCategory = category != null && !category.trim().isEmpty();
-
-        if (!hasKeyword && !hasCategory) {
+        if (keyword == null || keyword.trim().isEmpty()) {
             result = postRepository.findAll(pageable);
-        } else if (!hasKeyword) {
-            result = postRepository.findByCategory(category, pageable);
-        } else if (!hasCategory) {
-            result = postRepository.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(keyword, keyword, pageable);
         } else {
-            Page<Post> base = postRepository.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(keyword, keyword, pageable);
-            List<Post> filtered = base.stream()
-                    .filter(p -> category.equals(p.getCategory()))
-                    .toList();
-            result = new PageImpl<>(filtered, pageable, filtered.size());
+            result = postRepository.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(keyword, keyword, pageable);
         }
 
         return PostListResponse.from(result);
     }
 
+
     /**
      * 카테고리, 정렬 기준, 최소 좋아요 수, 키워드 기반 필터링
      */
-    public PostListResponse filterPosts(String category, String sort, int minLikes, String keyword) {
+    public PostListResponse filterPosts(String sort, int minLikes, String keyword) {
         Sort sortOption = "popular".equals(sort)
                 ? Sort.by(Sort.Order.desc("likeCount"), Sort.Order.desc("viewCount"))
                 : Sort.by(Sort.Order.desc("createdAt"));
 
         Pageable pageable = PageRequest.of(0, 20, sortOption);
-        Page<Post> result = postRepository.searchFilteredPosts(category, keyword, minLikes, pageable);
+        Page<Post> result = postRepository.searchFilteredPostsWithoutCategory(keyword, minLikes, pageable);
         return PostListResponse.from(result);
     }
+
 
     /**
      * 인기 게시글 조회 (좋아요 + 조회수 기준 상위 10개)

@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, TextInput, FlatList, Image,
-    TouchableOpacity, Pressable, Dimensions, ActivityIndicator
+    TouchableOpacity, Pressable, Dimensions, ActivityIndicator, Alert
 } from 'react-native';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
+import EncryptedStorage from 'react-native-encrypted-storage';
+import { jwtDecode } from 'jwt-decode';
 import moment from 'moment';
 import api from '../../api/api';
 
 const { width } = Dimensions.get('window');
 
-const BoardScreen = () => {
+const PostListScreen = () => {
     const navigation = useNavigation();
     const isFocused = useIsFocused();
+
     const [searchQuery, setSearchQuery] = useState('');
     const [popupVisible, setPopupVisible] = useState(null);
     const [postsData, setPostsData] = useState([]);
@@ -19,6 +22,23 @@ const BoardScreen = () => {
     const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(false);
     const [searchMode, setSearchMode] = useState(false);
+    const [writerId, setWriterId] = useState(null);
+
+    useEffect(() => {
+        const fetchUserId = async () => {
+            try {
+                const token = await EncryptedStorage.getItem('accessToken');
+                if (token) {
+                    const decoded = jwtDecode(token);
+                    setWriterId(Number(decoded.sub));
+                }
+            } catch (err) {
+                console.warn('토큰 디코딩 실패:', err);
+                setWriterId(null);
+            }
+        };
+        fetchUserId();
+    }, [isFocused]);
 
     useEffect(() => {
         if (isFocused) {
@@ -42,7 +62,7 @@ const BoardScreen = () => {
             setPage(currentPage);
             setSearchMode(false);
         } catch (err) {
-            console.error('전체 게시글 불러오기 실패', err);
+            console.error('게시글 목록 불러오기 실패:', err);
             setPostsData([]);
             setHasMore(false);
         } finally {
@@ -111,8 +131,8 @@ const BoardScreen = () => {
 
             <View style={styles.infoRow}>
                 <View style={styles.leftInfo}>
-                    {item.images?.length > 0 && (
-                        <Text style={styles.infoText}>📎 {item.images.length}개</Text>
+                    {item.imageCount > 0 && (
+                        <Text style={styles.infoText}>📎 {item.imageCount}개</Text>
                     )}
                 </View>
                 <View style={styles.rightInfo}>
@@ -174,7 +194,13 @@ const BoardScreen = () => {
 
             <TouchableOpacity
                 style={styles.floatingButton}
-                onPress={() => navigation.navigate('CreatePost')}
+                onPress={() => {
+                    if (!writerId) {
+                        Alert.alert('오류', '로그인이 필요합니다.');
+                        return;
+                    }
+                    navigation.navigate('CreatePost', { writerId });
+                }}
             >
                 <Image source={require('../../assets/add.png')} style={styles.addIcon} />
             </TouchableOpacity>
@@ -182,7 +208,7 @@ const BoardScreen = () => {
     );
 };
 
-export default BoardScreen;
+export default PostListScreen;
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F8F9FA' },

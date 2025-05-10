@@ -44,7 +44,6 @@ public class PostResponse {
                 .postId(post.getId())
                 .title(post.getTitle())
                 .content(post.getContent())
-                .category(post.getCategory())
                 .writerId(post.getWriter().getId())
                 .writerNickname(post.getWriter().getNickname())
                 .profileImageUrl(post.getWriter().getProfileImageUrl())
